@@ -1,0 +1,158 @@
+---
+name: to-expo
+description: Break a plan, spec, or PRD into independently-grabbable tickets in Exponential using tracer-bullet vertical slices. Use when user wants to convert a plan into Exponential tickets, push slices to Exponential, or break work down into tickets / features / epics in Exponential.
+---
+
+# To Expo
+
+Break a plan into independently-grabbable **tickets** in Exponential using vertical slices (tracer bullets). Tickets are the unit of backlog work; they live under a **product** and can be grouped by a **feature** (product-scoped) or an **epic** (workspace-scoped, cross-product).
+
+Hierarchy reminder: `workspace -> product -> feature -> ticket -> action`. Epics are a workspace-scoped cross-cut.
+
+## Prerequisites
+
+`exponential auth status` must succeed. If not, instruct the user to run `exponential auth login --token <jwt> --api-url <url>`.
+
+You will need a target **product** (slug or CUID). If the user hasn't said which, ask — it's required to file tickets. Use `exponential products list --workspace <slug|id> --json` to enumerate options.
+
+## Process
+
+### 1. Gather context
+
+Work from whatever is already in the conversation. If the user passes a ticket reference (CUID, shortId, or URL) as an argument, fetch it with `exponential tickets get <id> --json` and read its body, dependencies, and comments.
+
+### 2. Explore the codebase (optional)
+
+If you have not already explored the codebase, do so to understand the current state of the code. Ticket titles and descriptions should use the project's domain glossary vocabulary, and respect ADRs in the area you're touching.
+
+### 3. Decide on a grouping
+
+Ask the user (or infer):
+
+- **Existing feature?** If yes, capture its CUID — every ticket will get `--feature <id>`.
+- **Existing epic?** If yes, capture its CUID — every ticket will get `--epic <id>`.
+- **New feature?** Create one with `exponential features create --product <slug> -n "<name>" -d "<description>" --json` and capture the `id` from the response. Prefer this when the plan covers a single coherent capability inside one product.
+- **New epic?** Create one with `exponential epics create -n "<name>" -d "<description>" --workspace <slug|id> --json` and capture the `id`. Prefer this when the work cuts across products or represents a strategic initiative.
+- **Standalone tickets?** Skip grouping. Tickets are still tied to a product.
+
+### 4. Draft vertical slices
+
+Break the plan into **tracer bullet** tickets. Each ticket is a thin vertical slice that cuts through ALL integration layers end-to-end, NOT a horizontal slice of one layer.
+
+Slices may be **HITL** or **AFK**. HITL slices require human interaction (architectural decisions, design reviews). AFK slices can be implemented and merged without human interaction. Prefer AFK over HITL where possible.
+
+<vertical-slice-rules>
+- Each slice delivers a narrow but COMPLETE path through every layer (schema, API, UI, tests)
+- A completed slice is demoable or verifiable on its own
+- Prefer many thin slices over few thick ones
+</vertical-slice-rules>
+
+For each slice also decide:
+
+- **Ticket type**: `FEATURE` (default for new behaviour), `BUG`, `CHORE`, `IMPROVEMENT`, `SPIKE` (timeboxed investigation), `RESEARCH` (open-ended exploration).
+- **Initial status**: `READY_TO_PLAN` for AFK slices that are ready for an agent to grab, `NEEDS_REFINEMENT` for HITL slices that still need a human conversation.
+
+### 5. Quiz the user
+
+Present the proposed breakdown as a numbered list. For each slice, show:
+
+- **Title**: short descriptive name
+- **Type**: HITL / AFK
+- **Ticket type**: FEATURE / BUG / CHORE / IMPROVEMENT / SPIKE / RESEARCH
+- **Blocked by**: which other slices (if any) must complete first
+- **User stories covered**: which user stories this addresses (if the source material has them)
+
+Ask the user:
+
+- Does the granularity feel right? (too coarse / too fine)
+- Are the dependency relationships correct?
+- Should any slices be merged or split further?
+- Are the correct slices marked as HITL and AFK?
+- Is the chosen feature/epic grouping right?
+
+Iterate until the user approves the breakdown.
+
+### 6. Publish the tickets
+
+Publish in **dependency order** (blockers first) so you can wire `--by <blocker-id>` to real CUIDs. Use `--json` on every `create` and capture `.id` from the response — that is the CUID you'll reference for dependencies and links.
+
+For each approved slice:
+
+```bash
+exponential tickets create \
+  --product <slug-or-cuid> \
+  --type <FEATURE|BUG|CHORE|IMPROVEMENT|SPIKE|RESEARCH> \
+  --status <READY_TO_PLAN|NEEDS_REFINEMENT> \
+  --feature <feature-cuid>      # if grouping under a feature
+  --epic <epic-cuid>            # if grouping under an epic
+  -t "<title>" \
+  -b "$(cat <<'EOF'
+<body, per template below>
+EOF
+)" \
+  --json
+```
+
+After each create, parse the response's `id` and stash it under the slice's number. Then, for each declared blocker:
+
+```bash
+exponential tickets block <slice-id> --by <blocker-id>
+```
+
+If a slice already has implementation actions queued, link them with `exponential tickets link-action --id <ticket-id> --action <action-id>` — but only if those actions already exist.
+
+Do NOT modify the parent feature, epic, or any pre-existing ticket beyond the dependency edges you add.
+
+### 7. Report back
+
+Print a summary to the user listing each created ticket with its CUID, shortId (if present), and any dependency edges added. If you created a feature or epic in step 3, include its CUID too. Future commands (`exponential tickets show <id>`, `exponential tickets update --id <id> ...`) operate on CUIDs.
+
+## Ticket body template
+
+<ticket-template>
+## Parent
+
+A reference to the parent ticket, feature, or epic in Exponential (CUID or shortId). Omit if there is no parent.
+
+## What to build
+
+A concise description of this vertical slice. Describe the end-to-end behavior, not layer-by-layer implementation.
+
+Avoid specific file paths or code snippets — they go stale fast. Exception: if a prototype produced a snippet that encodes a decision more precisely than prose can (state machine, reducer, schema, type shape), inline it here and note briefly that it came from a prototype. Trim to the decision-rich parts — not a working demo, just the important bits.
+
+## Acceptance criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3
+
+## Blocked by
+
+- `<blocker-ticket-cuid-or-shortId>` — short description
+
+Or "None — can start immediately" if no blockers.
+
+</ticket-template>
+
+## Useful commands
+
+```bash
+# Discover where to file
+exponential workspaces list --json
+exponential products list --workspace <slug|id> --json
+exponential features list --product <slug|id> --json
+exponential epics list --workspace <slug|id> --json
+
+# Create groupings (optional)
+exponential features create --product <slug|id> -n "<name>" -d "<desc>" --json
+exponential epics create -n "<name>" -d "<desc>" --workspace <slug|id> --json
+
+# Create tickets + wire dependencies
+exponential tickets create --product <slug|id> -t "<title>" -b "<body>" \
+  --type FEATURE --status READY_TO_PLAN --feature <feature-cuid> --json
+exponential tickets block <ticket-cuid> --by <blocker-cuid>
+
+# Inspect what you just made
+exponential tickets list --product <slug|id> --feature <feature-cuid> --json
+exponential tickets show <ticket-cuid>
+```
