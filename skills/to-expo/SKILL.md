@@ -107,6 +107,50 @@ Do NOT modify the parent feature, epic, or any pre-existing ticket beyond the de
 
 Print a summary to the user listing each created ticket with its CUID, shortId (if present), and any dependency edges added. If you created a feature or epic in step 3, include its CUID too. Future commands (`exponential tickets show <id>`, `exponential tickets update --id <id> ...`) operate on CUIDs.
 
+### 8. Emit a clean-context execution prompt
+
+End your response with a fenced code block containing a **self-contained prompt** the user can paste into a fresh Claude conversation to start executing the tickets you just filed. The prompt must not rely on any of the current conversation's context — a cold agent reading only this prompt should know exactly what to do.
+
+Include in the prompt:
+
+- One sentence stating the goal: implement the tickets listed below in dependency order.
+- The parent feature/epic CUID (if one was created or chosen) so the agent can fetch it for shared context: `exponential features get <cuid>` or `exponential epics get <cuid>`.
+- A table or bullet list of every created ticket, in dependency order, with: CUID, shortId, title, type (FEATURE/BUG/...), status (READY_TO_PLAN / NEEDS_REFINEMENT), and HITL/AFK marker.
+- Explicit instructions to:
+  - fetch each ticket with `exponential tickets get <cuid> --json` before starting it,
+  - work tickets in dependency order, starting with `READY_TO_PLAN` AFK tickets that have no open blockers,
+  - stop and surface to the human on `NEEDS_REFINEMENT` (HITL) tickets rather than guessing.
+- The product slug/CUID so the agent can list siblings if needed.
+
+Do not include conversation-specific narrative (e.g. "we just decided X"). The prompt must read as a standalone work order.
+
+Template:
+
+<execution-prompt-template>
+````
+You are picking up a batch of tickets just filed in Exponential. Implement them in dependency order.
+
+**Product**: `<product-slug>` (CUID `<product-cuid>`)
+**Parent**: <feature|epic> `<cuid>` — fetch with `exponential <features|epics> get <cuid> --json` for shared context.
+
+**Tickets** (dependency order):
+
+| # | CUID | shortId | Title | Type | Status | HITL/AFK | Blocked by |
+|---|------|---------|-------|------|--------|----------|------------|
+| 1 | <cuid> | <shortId> | <title> | FEATURE | READY_TO_PLAN | AFK | — |
+| 2 | <cuid> | <shortId> | <title> | FEATURE | READY_TO_PLAN | AFK | #1 |
+| ... |
+
+**How to work**:
+
+1. Run `exponential tickets get <cuid> --json` to load the full body before starting any ticket.
+2. Start with `READY_TO_PLAN` + AFK tickets whose blockers are all `DONE`.
+3. For each ticket: read body and acceptance criteria, move to `IN_PROGRESS`, implement, verify acceptance criteria, then move to `IN_REVIEW` (or `DONE` if there is no review step).
+4. On `NEEDS_REFINEMENT` / HITL tickets, stop and surface the open questions to the human — do not guess.
+5. If a ticket's body is ambiguous or contradicts the code, leave a comment with `exponential tickets comment --id <cuid> -b "<question>"` and pause that ticket.
+````
+</execution-prompt-template>
+
 ## Ticket body template
 
 <ticket-template>
