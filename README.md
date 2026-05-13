@@ -1,3 +1,12 @@
+<!--
+  Exponential team: this README is upstream content (mattpocock/skills). For our
+  onboarding and conventions, read EXPONENTIAL-TEAM.md instead.
+-->
+
+> **Exponential team — start with [EXPONENTIAL-TEAM.md](./EXPONENTIAL-TEAM.md), not this README.** Install with `npx skills@latest add positonic/skills` (not `mattpocock/skills`).
+
+---
+
 <p>
   <a href="https://www.aihero.dev/s/skills-newsletter">
     <picture>
