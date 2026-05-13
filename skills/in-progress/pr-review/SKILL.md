@@ -29,6 +29,8 @@ Before reviewing, read each touched file in full where needed — diffs lie abou
 
 While reading, **record the exact line numbers** in the post-change file for anything you might flag. GitHub PR review comments must point at a line that is part of the PR's diff (an added line, or an unchanged line adjacent to the diff). Capture the line numbers from the `+++ b/<file>` side of the diff, not the `---` side. For multi-line issues, record the start and end line.
 
+If a finding's natural anchor isn't in the diff (e.g. a missing test file, a bug in a function the PR only calls but doesn't touch, a cross-cutting concern), don't try to fake an in-diff anchor — mark the finding's `Location` as `_general_` instead. Step 5 routes those into the review's overall body rather than as inline comments, so they post cleanly.
+
 If the PR is large (>~500 lines of diff), consider spawning parallel sub-agents — one per focus area below — and aggregating. Otherwise a single pass is fine.
 
 ### 3. Apply the reviewer prompt
@@ -38,6 +40,49 @@ The full prompt is in the next section. Follow it strictly: high signal, low noi
 ### 4. Report
 
 Output the findings exactly in the format specified below. End with a one-line summary: total findings per severity, and the single worst issue (if any).
+
+### 5. Offer to post — auto-detected, one keypress
+
+The skill should be "just works out of the box" by default. After reporting the findings:
+
+**If the review was pinned to a real GitHub PR** (step 1 used `gh pr diff <num>`):
+
+Ask exactly one question, no payload preview:
+
+> Post these as a **PENDING** review on PR #<num>? (Y/n) — `<inline-count>` inline comments + `<general-count>` general notes. PENDING means the review is drafted and only visible to you until you click **Submit review** in GitHub to choose Approve / Request changes / Comment.
+
+Default is **yes** (capital `Y`). Anything other than `n`/`no`/`skip` proceeds.
+
+**If the review was against a local branch with no PR**, skip this step entirely. Say one line: "No GitHub PR pinned — findings above are copy-paste-ready." Don't ask.
+
+#### When the user proceeds
+
+Derive everything from `gh`, never ask the user:
+
+1. Head SHA: `gh pr view <num> --json headRefOid -q .headRefOid`.
+2. Repo: `gh repo view --json nameWithOwner -q .nameWithOwner` (or the `owner/name` already known from step 1).
+
+Build a single payload with two pieces:
+
+- `body`: the review's overall body. Use this for any finding whose `Location` is `_general_`, plus a one-line summary header. Format each general finding as a markdown section so they render cleanly.
+- `comments[]`: one entry per inline finding. Each carries `path`, `line` (post-change number from `Location`), `side: "RIGHT"`, and `body` set to the **Copy-paste comment** block verbatim (including the `<details>` Prompt-for-your-LLM block). For multi-line ranges add `start_line` and `start_side: "RIGHT"`.
+
+Submit as a **single API call** in PENDING state — `event` field omitted so nothing is published yet:
+
+```
+gh api -X POST repos/<owner>/<name>/pulls/<num>/reviews \
+  -f commit_id=<head-sha> \
+  --input <payload-file>
+```
+
+On success, print the review URL from the response (`.html_url`) and remind the user it's PENDING until they submit in the UI.
+
+#### Hard guardrails
+
+- **Never** include `event: "APPROVE"` or `event: "REQUEST_CHANGES"`. Either lands a verdict without the human's gesture.
+- **Never** include `event: "COMMENT"` unless the user explicitly asks for an immediately-posted review.
+- **Never** post to a PR other than the one pinned in step 1.
+- The skill constructs only inline comments anchored to in-diff lines (the routing in step 2 enforces this), so the off-diff 422 trap shouldn't occur. If GitHub does return 422 on a comment, treat it as a bug in the routing: report which finding's anchor failed, demote that finding to a general note in the review body, and retry the call once.
 
 ---
 
@@ -80,13 +125,13 @@ Review the PR like a highly experienced engineer responsible for production reli
 
 ### Output format
 
-For each issue, output exactly this block. The location line and the fenced comment block are mandatory — they are what the user copy-pastes into GitHub.
+For each issue, output exactly this block. The location line and the fenced comment block are mandatory — step 5 reads them to build the API payload, and they're also what the user copy-pastes if they decline auto-posting.
 
 ````
 ## [Severity] Short title
 
-**Location:** `path/to/file.ext:LINE` (or `path/to/file.ext:START-END` for a range)
-**GitHub:** Open the PR → **Files changed** tab → navigate to `path/to/file.ext` → click the `+` on line `LINE` → paste the comment below.
+**Location:** `path/to/file.ext:LINE` (or `path/to/file.ext:START-END` for a range, or `_general_` if there's no in-diff anchor)
+**Manual paste fallback:** Files changed tab → `path/to/file.ext` → click `+` on line `LINE` → paste the comment below. (Skip if auto-posted via step 5.)
 
 **Copy-paste comment:**
 ```markdown
@@ -115,8 +160,9 @@ Rules for the location line:
 
 - Always cite the **post-change** line number (the `+++ b/...` side of the diff).
 - Use a single line (`file.ts:42`) for point issues, a range (`file.ts:42-58`) when the problem spans multiple lines.
-- The line must be inside the diff hunk or on an unchanged line directly adjacent to it — otherwise GitHub will reject the comment. If the real issue is far outside the diff, say so explicitly in the reviewer notes and pick the nearest in-diff anchor line.
-- If an issue is about something **missing** (e.g. a missing null check, missing test), anchor the comment to the line where the missing code should go.
+- The line must be inside the diff hunk or on an unchanged line directly adjacent to it — otherwise GitHub will reject the comment when step 5 tries to post it.
+- If an issue is about something **missing** that belongs on an in-diff line (e.g. a missing null check on a newly-added line), anchor the comment to the line where the missing code should go.
+- If the natural anchor is **not in the diff** at all (the bug is in a function the PR only calls, a test file that should exist but doesn't, a cross-cutting architectural concern), set `**Location:**` to `_general_` instead of a file:line. Step 5 routes general findings into the review's overall body so they post cleanly. Don't fake an in-diff anchor — a comment pointing at the wrong line is worse than a general note.
 
 Rules for the copy-paste comment:
 
@@ -170,7 +216,7 @@ This is the shape the user expects — one location line, one ready-to-paste com
 ## [High] `parseAmount` truncates fractional cents
 
 **Location:** `src/billing/parse.ts:47`
-**GitHub:** Open the PR → **Files changed** tab → navigate to `src/billing/parse.ts` → click the `+` on line `47` → paste the comment below.
+**Manual paste fallback:** Files changed tab → `src/billing/parse.ts` → click `+` on line `47` → paste the comment below. (Skip if auto-posted via step 5.)
 
 **Copy-paste comment:**
 ```markdown
