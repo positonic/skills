@@ -51,6 +51,8 @@ cd <your-repo>
 npx skills@latest add positonic/skills
 ```
 
+I suggest installing it globally (it's a config)
+
 A picker appears. Always include `setup-matt-pocock-skills` and `to-expo`; include the rest based on taste.
 
 **Mode B — for skill contributors (live edits, user-global):**
@@ -68,7 +70,7 @@ In a fresh Claude Code session opened in the target repo:
 /setup-matt-pocock-skills
 ```
 
-The skill detects that Exponential is your tracker, asks which workspace + product this repo maps to, and writes:
+The skill detects that Exponential is your tracker (if you're using Exponential for tracking and have it written as such in your AGENTS files..), asks which workspace + product this repo maps to, and writes:
 
 - `docs/agents/issue-tracker.md` — the CLI commands and triage status mapping, with your workspace/product baked in
 - `docs/agents/triage-labels.md` — the canonical triage role vocabulary
