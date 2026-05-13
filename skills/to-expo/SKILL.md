@@ -103,6 +103,26 @@ If a slice already has implementation actions queued, link them with `exponentia
 
 Do NOT modify the parent feature, epic, or any pre-existing ticket beyond the dependency edges you add.
 
+### 6a. Leave decision comments where pertinent
+
+If something about how a ticket was framed isn't obvious from its body alone, drop a short comment on the ticket capturing the **why**. The body describes *what to build*; comments are where rationale lives. A future agent (or human) fetching the ticket cold should be able to reconstruct the decisions you made.
+
+Worth commenting:
+
+- **Why this slice was split** off from a larger one ("originally combined with #4 but the auth surface needed its own demo").
+- **Why a non-default type/status** was chosen (e.g. `SPIKE` over `FEATURE` because the API shape is unknown; `NEEDS_REFINEMENT` because the user flagged an open question).
+- **Why this dependency edge exists** if it isn't structurally obvious from the bodies.
+- **Constraints surfaced in the conversation** that didn't fit cleanly in the body (deadlines, stakeholder preferences, prototype findings, ADR pointers).
+- **Explicitly-rejected alternatives** the user considered and discarded — so a later agent doesn't re-litigate them.
+
+Not worth commenting: anything already plainly stated in the ticket body or acceptance criteria. Don't narrate the obvious.
+
+```bash
+exponential tickets comment --id <ticket-cuid> -b "<short rationale, 1–3 sentences>"
+```
+
+Keep comments short and decision-focused. One comment per distinct point, not a wall of text.
+
 ### 7. Report back
 
 Print a summary to the user listing each created ticket with its CUID, shortId (if present), and any dependency edges added. If you created a feature or epic in step 3, include its CUID too. Future commands (`exponential tickets show <id>`, `exponential tickets update --id <id> ...`) operate on CUIDs.
