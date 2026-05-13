@@ -37,10 +37,18 @@ Assume the user does not know what these terms mean. Each section starts with a 
 
 > Explainer: The "issue tracker" is where issues live for this repo. Skills like `to-issues`, `triage`, `to-prd`, and `qa` read from and write to it — they need to know whether to call `gh issue create`, write a markdown file under `.scratch/`, or follow some other workflow you describe. Pick the place you actually track work for this repo.
 
-Default posture: these skills were designed for GitHub. If a `git remote` points at GitHub, propose that. If a `git remote` points at GitLab (`gitlab.com` or a self-hosted host), propose GitLab. Otherwise (or if the user prefers), offer:
+Default posture: these skills were designed for GitHub. If a `git remote` points at GitHub, propose that. If a `git remote` points at GitLab (`gitlab.com` or a self-hosted host), propose GitLab.
+
+Also probe for Exponential: run `exponential auth status` (silently — non-zero exit means not installed or not authed). If authed, run `exponential workspaces list --json` and `exponential products list --json`; if either returns results, propose **Exponential** as the default instead of GitHub/GitLab.
+
+Otherwise (or if the user prefers), offer:
 
 - **GitHub** — issues live in the repo's GitHub Issues (uses the `gh` CLI)
 - **GitLab** — issues live in the repo's GitLab Issues (uses the [`glab`](https://gitlab.com/gitlab-org/cli) CLI)
+- **Exponential** — issues live in [Exponential](https://www.exponential.im) (uses the `exponential` CLI). If picked, also ask:
+  - Which **workspace** (slug or CUID)? Show the list from `exponential workspaces list --json` and let the user pick.
+  - Which **product** (slug or CUID)? Show the list from `exponential products list --workspace <picked> --json` and let the user pick.
+  - (Optional) Does this repo's work roll up under a single **default feature**? If so, ask for the feature CUID; otherwise leave blank.
 - **Local markdown** — issues live as files under `.scratch/<feature>/` in this repo (good for solo projects or repos without a remote)
 - **Other** (Jira, Linear, etc.) — ask the user to describe the workflow in one paragraph; the skill will record it as freeform prose
 
@@ -116,9 +124,12 @@ Then write the three docs files using the seed templates in this skill folder as
 
 - [issue-tracker-github.md](./issue-tracker-github.md) — GitHub issue tracker
 - [issue-tracker-gitlab.md](./issue-tracker-gitlab.md) — GitLab issue tracker
+- [issue-tracker-exponential.md](./issue-tracker-exponential.md) — Exponential issue tracker
 - [issue-tracker-local.md](./issue-tracker-local.md) — local-markdown issue tracker
 - [triage-labels.md](./triage-labels.md) — label mapping
 - [domain.md](./domain.md) — domain doc consumer rules + layout
+
+When using the Exponential preset, substitute the captured workspace, product, and (optional) default-feature values for the `<workspace-slug-or-cuid>`, `<product-slug-or-cuid>`, and `<feature-cuid>` placeholders before writing.
 
 For "other" issue trackers, write `docs/agents/issue-tracker.md` from scratch using the user's description.
 
