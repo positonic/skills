@@ -27,6 +27,8 @@ Before reviewing, read each touched file in full where needed — diffs lie abou
 - The shape of data structures the diff manipulates.
 - Tests that exist (or conspicuously don't) for the changed code.
 
+While reading, **record the exact line numbers** in the post-change file for anything you might flag. GitHub PR review comments must point at a line that is part of the PR's diff (an added line, or an unchanged line adjacent to the diff). Capture the line numbers from the `+++ b/<file>` side of the diff, not the `---` side. For multi-line issues, record the start and end line.
+
 If the PR is large (>~500 lines of diff), consider spawning parallel sub-agents — one per focus area below — and aggregating. Otherwise a single pass is fine.
 
 ### 3. Apply the reviewer prompt
@@ -78,17 +80,57 @@ Review the PR like a highly experienced engineer responsible for production reli
 
 ### Output format
 
-For each issue:
+For each issue, output exactly this block. The location line and the fenced comment block are mandatory — they are what the user copy-pastes into GitHub.
 
-```
+````
 ## [Severity] Short title
 
-**Why this matters:**
-- Concrete production or maintenance risk. Be specific and technical.
+**Location:** `path/to/file.ext:LINE` (or `path/to/file.ext:START-END` for a range)
+**GitHub:** Open the PR → **Files changed** tab → navigate to `path/to/file.ext` → click the `+` on line `LINE` → paste the comment below.
 
-**Suggested improvement:**
-- Concrete fix. Prefer minimal diffs. Pseudo-code if useful.
+**Copy-paste comment:**
+```markdown
+**[Severity] Short title**
+
+<1–3 sentence explanation of the concrete production or maintenance risk — specific and technical.>
+
+Suggested fix:
+```<lang>
+<minimal code suggestion, or a `suggestion` block if a one-for-one replacement>
 ```
+
+<details>
+<summary>Prompt for your LLM</summary>
+
+<self-contained prompt the PR author can paste into Claude/Cursor/etc. — names the file and line, describes the bug, states the expected behavior, lists any constraints (don't change public API, keep tests passing, etc.).>
+
+</details>
+```
+
+**Why this matters (reviewer notes, not for posting):**
+- Extra context, call sites, related risks, or anything else useful to the human reviewer but too noisy to put in the PR comment itself.
+````
+
+Rules for the location line:
+
+- Always cite the **post-change** line number (the `+++ b/...` side of the diff).
+- Use a single line (`file.ts:42`) for point issues, a range (`file.ts:42-58`) when the problem spans multiple lines.
+- The line must be inside the diff hunk or on an unchanged line directly adjacent to it — otherwise GitHub will reject the comment. If the real issue is far outside the diff, say so explicitly in the reviewer notes and pick the nearest in-diff anchor line.
+- If an issue is about something **missing** (e.g. a missing null check, missing test), anchor the comment to the line where the missing code should go.
+
+Rules for the copy-paste comment:
+
+- Self-contained: a maintainer reading it on GitHub with no other context should understand the issue and the fix.
+- Use a GitHub `suggestion` block (` ```suggestion `) when proposing a direct line replacement — it lets the author one-click apply it.
+- Keep it tight. The reviewer notes section is where verbose reasoning goes; the posted comment stays scannable.
+
+Rules for the "Prompt for your LLM" block:
+
+- Written in the second person, directed at the PR author's coding assistant — not at the reviewer.
+- Must be self-contained: the PR author's LLM will not have seen this review, so the prompt must restate the file path, line number, the bug, and the desired behavior.
+- Include any guardrails the fix should respect (don't change the public API, keep existing tests green, add a regression test, match surrounding style, etc.).
+- Don't just paraphrase the suggestion block — the prompt should tell the LLM *what to verify and what not to break*, not only *what to type*.
+- Wrap it in a `<details><summary>Prompt for your LLM</summary> … </details>` block so it collapses by default and doesn't dominate the PR thread.
 
 Severity levels:
 
@@ -117,3 +159,45 @@ Before finalizing:
 - Ensure every comment is concise and actionable.
 
 You are optimizing for: *"Would a senior engineer be grateful this review caught this issue?"*
+
+---
+
+## Example finding
+
+This is the shape the user expects — one location line, one ready-to-paste comment block, optional reviewer notes.
+
+````
+## [High] `parseAmount` truncates fractional cents
+
+**Location:** `src/billing/parse.ts:47`
+**GitHub:** Open the PR → **Files changed** tab → navigate to `src/billing/parse.ts` → click the `+` on line `47` → paste the comment below.
+
+**Copy-paste comment:**
+```markdown
+**[High] `parseAmount` truncates fractional cents**
+
+`Math.floor(value * 100)` silently drops sub-cent precision before the rounding step, so `parseAmount("19.999")` returns `1999` instead of `2000`. Any upstream price that uses banker's rounding will now disagree with this parser.
+
+Suggested fix:
+​```suggestion
+  return Math.round(value * 100);
+​```
+
+<details>
+<summary>Prompt for your LLM</summary>
+
+In `src/billing/parse.ts` at line 47, `parseAmount` currently does `Math.floor(value * 100)`, which truncates sub-cent precision — e.g. `parseAmount("19.999")` returns `1999` instead of `2000`. Replace the `Math.floor` with `Math.round` so the result agrees with banker's-rounded prices upstream.
+
+Constraints:
+- Don't change `parseAmount`'s signature or return type.
+- Keep all existing tests passing.
+- Add a regression test covering inputs with more than two decimal places (e.g. `"19.999"` → `2000`, `"0.005"` → `1`).
+- Check `src/billing/refund.ts` for the same `Math.floor(value * 100)` pattern and fix it there too if present.
+
+</details>
+```
+
+**Why this matters (reviewer notes, not for posting):**
+- Same pattern repeats in `refund.ts:88` — worth a follow-up sweep.
+- No test covers values with >2 decimal places; consider adding one alongside the fix.
+````
