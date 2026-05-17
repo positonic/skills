@@ -93,15 +93,23 @@ EOF
   --json
 ```
 
-After each create, parse the response's `id` and stash it under the slice's number. Then, for each declared blocker:
+After each create, parse the response's `id` and `shortId` from the JSON response, and stash them under the slice's number. Then, for each declared blocker:
 
 ```bash
 exponential tickets block <slice-id> --by <blocker-id>
 ```
 
+Immediately after a Ticket is created, assign it an auto-generated `branchName` so `/start-ticket` and `/ship-ticket` can rely on the field being set:
+
+```bash
+exponential tickets update --id <cuid> --branch "<shortId-lowercased>-<slug(title)>"
+```
+
+The slug rules: lowercase, replace non-alphanumeric runs with `-`, trim leading/trailing `-`, cap at 50 chars. Example: shortId `EXPO-42`, title "Wire PR-URL filter into list endpoint" → `expo-42-wire-pr-url-filter-into-list-endpoint`.
+
 If a slice already has implementation actions queued, link them with `exponential tickets link-action --id <ticket-id> --action <action-id>` — but only if those actions already exist.
 
-Do NOT modify the parent feature, epic, or any pre-existing ticket beyond the dependency edges you add.
+Do NOT modify the parent feature, epic, or any pre-existing ticket beyond the dependency edges you add (and the `branchName` write-back just described).
 
 ### 6a. Leave decision comments where pertinent
 
@@ -161,13 +169,15 @@ You are picking up a batch of tickets just filed in Exponential. Implement them 
 | 2 | <cuid> | <shortId> | <title> | FEATURE | READY_TO_PLAN | AFK | #1 |
 | ... |
 
-**How to work**:
+**How to work** (one Ticket at a time, in dependency order):
 
-1. Run `exponential tickets get <cuid> --json` to load the full body before starting any ticket.
-2. Start with `READY_TO_PLAN` + AFK tickets whose blockers are all `DONE`.
-3. For each ticket: read body and acceptance criteria, move to `IN_PROGRESS`, implement, verify acceptance criteria, then move to `IN_REVIEW` (or `DONE` if there is no review step).
-4. On `NEEDS_REFINEMENT` / HITL tickets, stop and surface the open questions to the human — do not guess.
-5. If a ticket's body is ambiguous or contradicts the code, leave a comment with `exponential tickets comment --id <cuid> -b "<question>"` and pause that ticket.
+1. **Start** the Ticket: `/start-ticket <cuid>` — fetches the body, transitions to `IN_PROGRESS`, checks out (or creates) its branch, and writes `.exponential/current-ticket`.
+2. Read the Ticket body and acceptance criteria.
+3. Implement the slice end-to-end. Verify the acceptance criteria locally.
+4. **Ship** the Ticket: `/ship-ticket` (no arg — it auto-detects from the marker file). Pre-ship checks run; a PR opens (or extends, if you stacked on the same branch); the Ticket transitions to `QA`; `ticket.prUrl` is set so the merge hook can promote it to `DONE`.
+5. Move to the next Ticket whose blockers are all `DONE` (or `QA` if you trust the merge hook).
+6. On `NEEDS_REFINEMENT` / HITL tickets, stop and surface the open questions to the human — do not guess.
+7. If a Ticket's body is ambiguous or contradicts the code, leave a comment with `exponential tickets comment add --id <cuid> -m "<question>"` and pause that Ticket.
 ````
 </execution-prompt-template>
 
