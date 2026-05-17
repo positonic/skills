@@ -21,12 +21,14 @@ The skills are small, composable, and model-agnostic. They don't replace your ju
 |---|---|
 | `/grill-with-docs` | Anytime you're starting a non-trivial change. The agent grills you, updates `CONTEXT.md` and ADRs as decisions crystallise. |
 | `/to-prd` | Turn a settled conversation into a PRD and file it in Exponential as a feature. |
-| `/to-expo` | Break a PRD/plan into independently-grabbable Exponential tickets using vertical slices. |
+| `/to-expo` | Break a PRD/plan into independently-grabbable Exponential tickets using vertical slices. Each ticket gets an auto-assigned `branchName`. |
 | `/triage` | Sort the incoming ticket backlog by routing each one to the right state (ready-for-agent, ready-for-human, needs-info, etc). |
+| `/start-ticket` | Pick up a `READY_TO_PLAN` ticket: checks out its branch, moves it to `IN_PROGRESS`, drops a `.exponential/current-ticket` marker so `/ship-ticket` knows which ticket you're on. |
 | `/tdd` | Build a feature with a red-green-refactor loop. Default mode for new functionality. |
 | `/diagnose` | Stuck on a bug or perf regression. Reproduce → minimise → hypothesise → fix → regression-test. |
-| `/improve-codebase-architecture` | Run weekly-ish on a repo that's getting messy — finds deepening opportunities grounded in the domain. |
 | `/zoom-out` | Ask the agent to explain a piece of code in the context of the whole system before you touch it. |
+| `/ship-ticket` | Done building: runs your test/type/lint suite, makes an atomic commit, opens a PR linked to the ticket, moves the ticket to `QA`. Run again on the same branch to **stack** another ticket onto the open PR. |
+| `/improve-codebase-architecture` | Run weekly-ish on a repo that's getting messy — finds deepening opportunities grounded in the domain. |
 
 Run any skill by typing `/<name>` in a Claude Code session.
 
@@ -79,6 +81,20 @@ The skill detects that Exponential is your tracker (if you're using Exponential 
 
 After this, every other skill in the set "just works" against our Exponential product.
 
+`/setup-matt-pocock-skills` also invokes `/setup-git-flow` as a sub-step. That one detects your repo's branching model (trunk-based, `develop → main`, or full `develop → staging → main`) by inspecting remote branches via `gh`, confirms with you, and writes `docs/agents/git-flow.md`. `/ship-ticket` reads it to pick the right base branch for new PRs; `/setup-merge-hook` (below) reads it to know which merge triggers `DONE`.
+
+### 4. (Optional but recommended) Wire auto-promotion to `DONE` on merge
+
+If you want tickets to move from `QA` to `DONE` automatically when their PR merges to your trunk — no manual status updates after `/ship-ticket` — run:
+
+```
+/setup-merge-hook
+```
+
+The skill prompts you to paste an Exponential JWT (get it via `exponential auth show --token`), sets it as a repo secret called `EXPONENTIAL_TOKEN` via `gh secret set`, and scaffolds `.github/workflows/exponential-promote.yml`. It does **not** commit — review the workflow file, then commit and push to activate. The Action handles direct PRs (feature → trunk) and rollup PRs (e.g. `develop → main`) transparently.
+
+Without this, tickets stay in `QA` after `/ship-ticket` and you flip them to `DONE` by hand.
+
 ## Install Mode A vs Mode B: which to pick
 
 |   | Mode A: `npx skills add` | Mode B: `link-skills.sh` |
@@ -92,15 +108,28 @@ After this, every other skill in the set "just works" against our Exponential pr
 
 **Rule of thumb**: if you're not editing the skills repo, you want Mode A. If you are, Mode B.
 
+## The Ticket lifecycle, at a glance
+
+Once `/setup-matt-pocock-skills` and `/setup-merge-hook` are wired, every state transition is driven by a skill or the merge event — no manual status updates needed.
+
+| Action | Ticket status |
+|---|---|
+| `/to-expo` files the ticket | `READY_TO_PLAN` |
+| `/start-ticket EXPO-N` | `IN_PROGRESS` |
+| `/ship-ticket` opens the PR | `QA` |
+| PR merges to your trunk | `DONE` (auto, via GitHub Action) |
+
+The commit, the PR, and the ticket are linked three ways: `ticket.branchName` ↔ git branch, `ticket.prUrl` ↔ GitHub PR, and an `Exponential-Ticket: <cuid>` trailer on the commit `/ship-ticket` creates. The GitHub Action uses `ticket.prUrl` as the source of truth when promoting to `DONE`; the commit trailer is decoration for human `git log` readers.
+
 ## A suggested daily workflow
 
 A loop that uses the skills the way they were designed to compose. Adapt it.
 
-1. **Idea → aligned spec.** Don't start coding. Open a Claude session and run `/grill-with-docs`. It will interview you about the change and update `CONTEXT.md` / ADRs inline. You leave with a sharper definition than you started with.
+1. **Idea → aligned spec.** Don't start coding. Open a Claude session and run `/grill-with-docs`. It interviews you about the change and updates `CONTEXT.md` / ADRs inline. You leave with a sharper definition than you started with.
 
-2. **Spec → PRD in Exponential.** Run `/to-prd`. It synthesises the conversation into a PRD and files it as a feature in Exponential (`status: DEFINED`).
+2. **Spec → PRD in Exponential.** Run `/to-prd`. It synthesises the conversation into a PRD and files it as a feature in Exponential.
 
-3. **PRD → tickets.** Run `/to-expo`. It breaks the PRD into vertical-slice tickets with explicit dependencies, filed under the feature.
+3. **PRD → tickets.** Run `/to-expo`. It breaks the PRD into vertical-slice tickets with explicit dependencies, filed under the feature. Each ticket gets an auto-assigned `branchName` so `/start-ticket` knows where to check out.
 
 4. **Backlog → routed work.** Whenever new tickets land in `BACKLOG`, run `/triage`. It moves each to:
    - `READY_TO_PLAN` if fully specified for an agent
@@ -108,9 +137,17 @@ A loop that uses the skills the way they were designed to compose. Adapt it.
    - `NEEDS_REFINEMENT` (with a comment carrying the question) if more info is needed
    - `ARCHIVED` if it won't be actioned
 
-5. **Pick up a ticket and build.** Read the ticket, open a Claude session, and use `/tdd` for new functionality. For bugs, start with `/diagnose`. Use `/zoom-out` first if the code area is unfamiliar.
+5. **Start a ticket.** Pick one from the `READY_TO_PLAN` queue and run `/start-ticket EXPO-N`. It checks out the ticket's branch (creating if needed), moves the ticket to `IN_PROGRESS`, and drops `.exponential/current-ticket` so the next skill knows which ticket you're on.
 
-6. **Maintain the design.** Once a week-ish, run `/improve-codebase-architecture` on the repo. It surfaces refactors grounded in our domain language.
+6. **Build.** `/tdd` for new functionality, `/diagnose` for bugs, `/zoom-out` first if the code area is unfamiliar.
+
+7. **Ship.** When the work is done, run `/ship-ticket` — no arguments needed. It auto-detects the ticket from the marker, runs your discovered test/type/lint commands (use `--skip-checks` for a draft PR if work is unfinished), creates an atomic commit with the right trailer, opens a PR against the base branch from your git-flow config, links `ticket.prUrl`, and moves the ticket to `QA`.
+
+   **Stacking**: if you want to bundle a tightly-coupled second ticket into the same PR, stay on the branch, run `/start-ticket EXPO-M`, do the work, then `/ship-ticket` again. The skill detects the open PR and appends to it; both tickets end up linked to the same PR URL.
+
+8. **Merge.** When the PR merges to your trunk, the GitHub Action scaffolded by `/setup-merge-hook` finds the linked ticket(s) — directly or by walking rollup-PR commit messages for child PR refs — and moves them to `DONE`. You don't touch the ticket again.
+
+9. **Maintain the design.** Once a week-ish, run `/improve-codebase-architecture` on the repo. It surfaces refactors grounded in our domain language.
 
 The skills are designed to be invoked at the moment you'd already pause to think. They don't replace the pause — they structure it.
 
