@@ -75,6 +75,14 @@ Confirm the layout:
 - **Single-context** — one `CONTEXT.md` + `docs/adr/` at the repo root. Most repos are this.
 - **Multi-context** — `CONTEXT-MAP.md` at the root pointing to per-context `CONTEXT.md` files (typically a monorepo).
 
+**Section D — Git flow.**
+
+> Explainer: The Ticket lifecycle skills (`/start-ticket`, `/ship-ticket`, `/setup-merge-hook`) need to know this repo's **Promotion chain** — the ordered list of branches work passes through (e.g. `develop → staging → main`) — and which branch is the **deploy trigger** (the merge that marks a Ticket `DONE`). They consume `docs/agents/git-flow.md`.
+
+If `docs/agents/git-flow.md` already exists, skip this section (the user has already run `/setup-git-flow` or hand-written it). Otherwise, run the `/setup-git-flow` flow inline: detect the branching model from `gh repo view --json defaultBranchRef` plus `git ls-remote --heads origin`, apply the heuristics (full GitFlow if `develop` + intermediate + trunk all exist; simple if `develop` + trunk; trunk-based otherwise), confirm the chain and deploy trigger with the user, and write `docs/agents/git-flow.md` per the template in [setup-git-flow/SKILL.md](../setup-git-flow/SKILL.md).
+
+You can alternatively just invoke `/setup-git-flow` directly if the user prefers.
+
 ### 3. Confirm and edit
 
 Show the user a draft of:
@@ -112,7 +120,13 @@ The block:
 ### Domain docs
 
 [one-line summary of layout — "single-context" or "multi-context"]. See `docs/agents/domain.md`.
+
+### Git flow
+
+[one-line summary — e.g. "trunk-based on `main`" or "GitFlow: `develop → staging → main`"]. See `docs/agents/git-flow.md`.
 ```
+
+Omit the `### Git flow` subsection if you skipped Section D (i.e. `docs/agents/git-flow.md` doesn't exist and wasn't created in this run).
 
 Then write the three docs files using the seed templates in this skill folder as a starting point:
 
