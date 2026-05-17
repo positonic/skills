@@ -159,7 +159,11 @@ Skills I use daily for code work.
 - **[grill-with-docs](./skills/engineering/grill-with-docs/SKILL.md)** — Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates `CONTEXT.md` and ADRs inline.
 - **[triage](./skills/engineering/triage/SKILL.md)** — Triage issues through a state machine of triage roles.
 - **[improve-codebase-architecture](./skills/engineering/improve-codebase-architecture/SKILL.md)** — Find deepening opportunities in a codebase, informed by the domain language in `CONTEXT.md` and the decisions in `docs/adr/`.
+- **[setup-git-flow](./skills/engineering/setup-git-flow/SKILL.md)** — Detect this repo's branching model and persist the resulting Promotion chain to `docs/agents/git-flow.md` so `/ship-ticket` and `/setup-merge-hook` know the featureBase and deploy trigger.
 - **[setup-matt-pocock-skills](./skills/engineering/setup-matt-pocock-skills/SKILL.md)** — Scaffold the per-repo config (issue tracker, triage label vocabulary, domain doc layout) that the other engineering skills consume. Run once per repo before using `to-issues`, `to-prd`, `triage`, `diagnose`, `tdd`, `improve-codebase-architecture`, or `zoom-out`.
+- **[setup-merge-hook](./skills/engineering/setup-merge-hook/SKILL.md)** — Scaffold the GitHub Action that auto-promotes Exponential Tickets from `QA` to `DONE` when their PRs merge into the deploy trigger.
+- **[ship-ticket](./skills/engineering/ship-ticket/SKILL.md)** — Ship one Exponential Ticket: commit leftovers, run pre-ship checks, open or extend a PR, link it back to the Ticket, and transition to `QA`.
+- **[start-ticket](./skills/engineering/start-ticket/SKILL.md)** — Start work on an Exponential Ticket: fetch it, transition to `IN_PROGRESS`, check out (or create) its branch, and write the `.exponential/current-ticket` marker.
 - **[tdd](./skills/engineering/tdd/SKILL.md)** — Test-driven development with a red-green-refactor loop. Builds features or fixes bugs one vertical slice at a time.
 - **[to-expo](./skills/engineering/to-expo/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable tickets in [Exponential](https://www.exponential.im) using vertical slices.
 - **[to-issues](./skills/engineering/to-issues/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable GitHub issues using vertical slices.

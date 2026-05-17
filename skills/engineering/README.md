@@ -6,7 +6,11 @@ Skills I use daily for code work.
 - **[grill-with-docs](./grill-with-docs/SKILL.md)** — Grilling session that challenges your plan against the existing domain model, sharpens terminology, and updates `CONTEXT.md` and ADRs inline.
 - **[triage](./triage/SKILL.md)** — Triage issues through a state machine of triage roles.
 - **[improve-codebase-architecture](./improve-codebase-architecture/SKILL.md)** — Find deepening opportunities in a codebase, informed by the domain language in `CONTEXT.md` and the decisions in `docs/adr/`.
+- **[setup-git-flow](./setup-git-flow/SKILL.md)** — Detect this repo's branching model and persist the resulting Promotion chain to `docs/agents/git-flow.md`.
 - **[setup-matt-pocock-skills](./setup-matt-pocock-skills/SKILL.md)** — Scaffold the per-repo config (issue tracker, triage label vocabulary, domain doc layout) that the other engineering skills consume.
+- **[setup-merge-hook](./setup-merge-hook/SKILL.md)** — Scaffold the GitHub Action that auto-promotes Exponential Tickets to `DONE` on merge to the deploy trigger.
+- **[ship-ticket](./ship-ticket/SKILL.md)** — Ship one Exponential Ticket: commit leftovers, run pre-ship checks, open or extend a PR, link it back to the Ticket, and transition to `QA`.
+- **[start-ticket](./start-ticket/SKILL.md)** — Start work on an Exponential Ticket: fetch it, transition to `IN_PROGRESS`, check out (or create) its branch, and write the `.exponential/current-ticket` marker.
 - **[tdd](./tdd/SKILL.md)** — Test-driven development with a red-green-refactor loop. Builds features or fixes bugs one vertical slice at a time.
 - **[to-expo](./to-expo/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable tickets in [Exponential](https://www.exponential.im) using vertical slices.
 - **[to-issues](./to-issues/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable GitHub issues using vertical slices.
