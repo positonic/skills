@@ -15,10 +15,36 @@ _Avoid_: ticket (use only when quoting external systems that call them tickets)
 **Triage role**:
 A canonical state-machine label applied to an **Issue** during triage (e.g. `needs-triage`, `ready-for-afk`). Each role maps to a real label string in the **Issue tracker** via `docs/agents/triage-labels.md`.
 
+**Ticket**:
+The Exponential-specific manifestation of an **Issue**. Tickets carry additional structure beyond a generic Issue — a CUID, shortId, `branchName`, `prUrl`, and a status from Exponential's `TicketStatus` enum (`BACKLOG`, `READY_TO_PLAN`, `IN_PROGRESS`, `QA`, `DONE`, `DEPLOYED`, …). The terms below — Start, Ship, Stack — operate on Tickets specifically, not arbitrary Issues.
+
+**Start** (verb):
+Picking up a `READY_TO_PLAN` **Ticket** and beginning `IN_PROGRESS` work — checking out the branch, writing the `.exponential/current-ticket` marker. Emitted by `/start-ticket`. The front-end bookend to `/ship-ticket`.
+
+**Ship** (verb):
+Opening a pull request for a **Ticket**, transitioning it to `QA`, and linking the PR back via `ticket.prUrl`. Emitted by `/ship-ticket`. Distinct from "merge" — shipping puts the work *in review*; merging puts it on the **Trunk**.
+_Avoid_: complete, submit, deliver (when referring to PR opening specifically)
+
+**Stack** (verb):
+Running `/ship-ticket` for a second **Ticket** while still on the branch of a previously-shipped one. The new commit lands on the same PR; both Tickets link to that PR's URL. For tightly-coupled slices that shouldn't be reviewed independently.
+
+**Promotion chain**:
+The ordered list of branches work passes through before reaching the **Trunk** (e.g. `develop → staging → main`). Detected and persisted by `/setup-git-flow` to `docs/agents/git-flow.md`. Skills consume it for base-branch defaults and deploy-trigger detection.
+
+**Trunk**:
+The repo's default branch — the final destination of all work in a **Promotion chain**. Usually `main`.
+
+**Deploy trigger**:
+The branch whose merge transitions a **Ticket** from `QA` to `DONE`. Almost always equals the **Trunk**. Configured per-repo via `/setup-git-flow`.
+
+**Rollup PR**:
+A pull request that promotes work from one branch in the **Promotion chain** to the next (e.g. `develop → main`). Distinct from a feature PR (which targets the first node in the chain). The GitHub Action scaffolded by `/setup-merge-hook` walks rollup PRs' commit messages to find their child feature PRs and the Tickets linked to those.
+
 ## Relationships
 
 - An **Issue tracker** holds many **Issues**
 - An **Issue** carries one **Triage role** at a time
+- A **Ticket** is **Started**, optionally **Stacked**, then **Shipped**; once **Shipped** it moves through the **Promotion chain** via **Rollup PRs** until the **Deploy trigger** is hit, marking it `DONE`
 
 ## Flagged ambiguities
 
