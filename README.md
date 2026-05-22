@@ -176,6 +176,7 @@ Skills I use daily for code work.
 - **[to-expo](./skills/engineering/to-expo/SKILL.md)** — Break any plan, spec, or PRD into independently-grabbable tickets in [Exponential](https://www.exponential.im) using vertical slices.
 - **[start-ticket](./skills/engineering/start-ticket/SKILL.md)** — Start work on an Exponential Ticket: fetch it, transition to `IN_PROGRESS`, check out (or create) its branch, and write the `.exponential/current-ticket` marker.
 - **[ship-ticket](./skills/engineering/ship-ticket/SKILL.md)** — Ship one Exponential Ticket: commit leftovers, run pre-ship checks, open or extend a PR, link it back to the Ticket, and transition to `QA`.
+- **[ship-this](./skills/engineering/ship-this/SKILL.md)** — Ship the current working copy end-to-end with zero hand-holding: branch if needed, commit, push, open a PR against the right base, run a CodeRabbit review + autofix loop, wait for CI, and squash-merge. The ticket-free sibling of `/ship-ticket`.
 - **[setup-git-flow](./skills/engineering/setup-git-flow/SKILL.md)** — Detect this repo's branching model and persist the resulting Promotion chain to `docs/agents/git-flow.md` so `/ship-ticket` and `/setup-merge-hook` know the featureBase and deploy trigger.
 - **[setup-merge-hook](./skills/engineering/setup-merge-hook/SKILL.md)** — Scaffold the GitHub Action that auto-promotes Exponential Tickets from `QA` to `DONE` when their PRs merge into the deploy trigger.
 
