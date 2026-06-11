@@ -147,6 +147,7 @@ Include in the prompt:
 - Explicit instructions to:
   - fetch each ticket with `exponential tickets get <cuid> --json` before starting it,
   - work tickets in dependency order, starting with `READY_TO_PLAN` AFK tickets that have no open blockers,
+  - merge a Ticket's PR to `main` before starting any Ticket that depends on it (reaching `QA` is not enough — the blocker's code isn't in `main` until its PR merges), so each new Ticket branches off an up-to-date `main` and no stack of PRs forms,
   - stop and surface to the human on `NEEDS_REFINEMENT` (HITL) tickets rather than guessing.
 - The product slug/CUID so the agent can list siblings if needed.
 
@@ -174,10 +175,15 @@ You are picking up a batch of tickets just filed in Exponential. Implement them 
 1. **Start** the Ticket: `/start-ticket <cuid>` — fetches the body, transitions to `IN_PROGRESS`, checks out (or creates) its branch, and writes `.exponential/current-ticket`.
 2. Read the Ticket body and acceptance criteria.
 3. Implement the slice end-to-end. Verify the acceptance criteria locally.
-4. **Ship** the Ticket: `/ship-ticket` (no arg — it auto-detects from the marker file). Pre-ship checks run; a PR opens (or extends, if you stacked on the same branch); the Ticket transitions to `QA`; `ticket.prUrl` is set so the merge hook can promote it to `DONE`.
-5. Move to the next Ticket whose blockers are all `DONE` (or `QA` if you trust the merge hook).
+4. **Ship** the Ticket: `/ship-ticket` (no arg — it auto-detects from the marker file). Pre-ship checks run; a PR opens (or extends, if you stacked on the same branch); the Ticket transitions to `QA`; `ticket.prUrl` is set. The `QA`→`DONE` promotion happens only once the PR actually merges — so reaching `QA` does **not** make the Ticket's code available to later Tickets.
+5. **Merge a Ticket's PR to `main` before starting any Ticket that depends on it.** `QA` is only a status; the blocker's *code* lives on its branch, not in `main`, until its PR merges. `/start-ticket` branches each new Ticket off `origin/<featureBase>`, so a freshly-merged `main` is what both keeps dependent Tickets compiling and prevents stacked PRs. Independent Tickets (no shared blocker) may proceed in parallel off `main`.
 6. On `NEEDS_REFINEMENT` / HITL tickets, stop and surface the open questions to the human — do not guess.
 7. If a Ticket's body is ambiguous or contradicts the code, leave a comment with `exponential tickets comment add --id <cuid> -m "<question>"` and pause that Ticket.
+
+> **Do NOT create separate PRs stacked on each other.** Two acceptable shapes:
+> (a) **Merge-between (default):** ship a Ticket, merge its PR to `main`, then `/start-ticket` the next — it branches off the updated `main`, so nothing stacks.
+> (b) **One PR for a tightly-coupled chain:** keep the whole chain on ONE branch and let `/ship-ticket`'s stack mode append each Ticket to a SINGLE PR, merged once.
+> Never leave a tower of N branches each based on the previous one — a change to the base then forces a full restack of everything above it.
 ````
 </execution-prompt-template>
 
