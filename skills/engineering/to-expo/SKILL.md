@@ -145,6 +145,7 @@ Include in the prompt:
 - The parent feature/epic CUID (if one was created or chosen) so the agent can fetch it for shared context: `exponential features get <cuid>` or `exponential epics get <cuid>`.
 - A table or bullet list of every created ticket, in dependency order, with: CUID, shortId, title, type (FEATURE/BUG/...), status (READY_TO_PLAN / NEEDS_REFINEMENT), and HITL/AFK marker.
 - Explicit instructions to:
+  - before the first Ticket, check out the **featureBase** branch (from `docs/agents/git-flow.md`; default `main`) and pull — never start ticket work from an unmerged feature branch or a dirty working tree; `/start-ticket` cuts each Ticket's branch from that base,
   - fetch each ticket with `exponential tickets get <cuid> --json` before starting it,
   - work tickets in dependency order, starting with `READY_TO_PLAN` AFK tickets that have no open blockers,
   - merge a Ticket's PR to `main` before starting any Ticket that depends on it (reaching `QA` is not enough — the blocker's code isn't in `main` until its PR merges), so each new Ticket branches off an up-to-date `main` and no stack of PRs forms,
@@ -172,6 +173,7 @@ You are picking up a batch of tickets just filed in Exponential. Implement them 
 
 **How to work** (one Ticket at a time, in dependency order):
 
+0. **Get on a clean base first**: `git checkout <featureBase>` (from `docs/agents/git-flow.md`; default `main`) `&& git pull`. Commit or stash anything dirty. Never start from an unmerged feature branch — `/start-ticket` cuts each Ticket's branch from the base you're standing on being up to date.
 1. **Start** the Ticket: `/start-ticket <cuid>` — fetches the body, transitions to `IN_PROGRESS`, checks out (or creates) its branch, and writes `.exponential/current-ticket`.
 2. Read the Ticket body and acceptance criteria.
 3. Implement the slice end-to-end. Verify the acceptance criteria locally.
