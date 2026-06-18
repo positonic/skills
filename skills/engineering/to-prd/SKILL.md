@@ -16,7 +16,18 @@ The issue tracker and triage label vocabulary should have been provided to you �
 
 Check with the user that these seams match their expectations.
 
-3. Write the PRD using the template below, then publish it to the project issue tracker. Apply the `ready-for-agent` triage label - no need for additional triage.
+3. Author the user stories as **structured triples** — for each story hold an `asA` / `iWant` / `soThat` (and an optional `acceptanceCriteria`) separately. This list should be LONG and extensive, covering all aspects of the feature, each in the shape "As a `<actor>`, I want `<feature>`, so that `<benefit>`". You will emit these as native, editable rows on the Feature in step 5 — so do NOT embed them as a prose `## User Stories` section in the description below.
+
+4. Write the PRD body using the template below (note: it no longer contains a `## User Stories` section — the stories become native rows).
+
+5. Publish to the project issue tracker:
+
+   - Create the Feature with the PRD body, capturing its id from the JSON response, e.g.
+     `exponential features create --product <product> -n "<name>" -d "<body>" --vision "<target outcome>" --status DEFINED --json`.
+   - Emit the authored user stories as **native structured rows** by piping a JSON array of
+     `{ asA, iWant, soThat, acceptanceCriteria? }` objects on stdin to
+     `exponential features stories add --feature <new-feature-id>`. Supply the structured triples you authored in step 3 directly — do **not** introduce a prose "As a…, I want…, so that…" parser, and do **not** paste the stories into the description.
+   - Apply the `ready-for-agent` triage label — no need for additional triage.
 
 <prd-template>
 
@@ -28,17 +39,7 @@ The problem that the user is facing, from the user's perspective.
 
 The solution to the problem, from the user's perspective.
 
-## User Stories
-
-A LONG, numbered list of user stories. Each user story should be in the format of:
-
-1. As an <actor>, I want a <feature>, so that <benefit>
-
-<user-story-example>
-1. As a mobile bank customer, I want to see balance on my accounts, so that I can make better informed decisions about my spending
-</user-story-example>
-
-This list of user stories should be extremely extensive and cover all aspects of the feature.
+(User stories are NOT a section here — they are authored as structured triples in step 3 and published as native, editable user-story rows on the Feature in step 5, rather than as prose in this description.)
 
 ## Implementation Decisions
 
