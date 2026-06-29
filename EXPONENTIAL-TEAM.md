@@ -10,8 +10,8 @@ Coding agents fail in predictable ways. They build the wrong thing, drown you in
 
 - **Misalignment** → `/grill-with-docs` interviews you until you and the agent agree on what's being built
 - **Verbosity** → grounding in a project-specific `CONTEXT.md` cuts both prose and code bloat
-- **Broken code** → `/tdd` and `/diagnose` enforce real feedback loops
-- **Architectural drift** → `/improve-codebase-architecture` and `/zoom-out` keep the design intentional
+- **Broken code** → `/tdd` and `/diagnosing-bugs` enforce real feedback loops
+- **Architectural drift** → `/improve-codebase-architecture` keeps the design intentional
 
 The skills are small, composable, and model-agnostic. They don't replace your judgement; they structure it.
 
@@ -25,8 +25,7 @@ The skills are small, composable, and model-agnostic. They don't replace your ju
 | `/triage` | Sort the incoming ticket backlog by routing each one to the right state (ready-for-agent, ready-for-human, needs-info, etc). |
 | `/start-ticket` | Pick up a `READY_TO_PLAN` ticket: checks out its branch, moves it to `IN_PROGRESS`, drops a `.exponential/current-ticket` marker so `/ship-ticket` knows which ticket you're on. |
 | `/tdd` | Build a feature with a red-green-refactor loop. Default mode for new functionality. |
-| `/diagnose` | Stuck on a bug or perf regression. Reproduce → minimise → hypothesise → fix → regression-test. |
-| `/zoom-out` | Ask the agent to explain a piece of code in the context of the whole system before you touch it. |
+| `/diagnosing-bugs` | Stuck on a bug or perf regression. Reproduce → minimise → hypothesise → fix → regression-test. |
 | `/ship-ticket` | Done building: runs your test/type/lint suite, makes an atomic commit, opens a PR linked to the ticket, moves the ticket to `QA`. Run again on the same branch to **stack** another ticket onto the open PR. |
 | `/improve-codebase-architecture` | Run weekly-ish on a repo that's getting messy — finds deepening opportunities grounded in the domain. |
 
@@ -139,7 +138,7 @@ A loop that uses the skills the way they were designed to compose. Adapt it.
 
 5. **Start a ticket.** Pick one from the `READY_TO_PLAN` queue and run `/start-ticket EXPO-N`. It checks out the ticket's branch (creating if needed), moves the ticket to `IN_PROGRESS`, and drops `.exponential/current-ticket` so the next skill knows which ticket you're on.
 
-6. **Build.** `/tdd` for new functionality, `/diagnose` for bugs, `/zoom-out` first if the code area is unfamiliar.
+6. **Build.** `/tdd` for new functionality, `/diagnosing-bugs` for bugs.
 
 7. **Ship.** When the work is done, run `/ship-ticket` — no arguments needed. It auto-detects the ticket from the marker, runs your discovered test/type/lint commands (use `--skip-checks` for a draft PR if work is unfinished), creates an atomic commit with the right trailer, opens a PR against the base branch from your git-flow config, links `ticket.prUrl`, and moves the ticket to `QA`.
 
