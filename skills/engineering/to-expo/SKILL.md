@@ -17,6 +17,16 @@ You will need a target **product** (slug or CUID). If the user hasn't said which
 
 ## Process
 
+### 0. Work in a fresh git worktree
+
+Always run this skill from a dedicated git worktree so the user's main checkout — open IDE, in-progress edits, current branch — stays untouched while you explore the codebase and draft tickets. Create it before doing anything else and do all subsequent work from inside it:
+
+```bash
+git worktree add /tmp/<repo>-to-expo HEAD
+```
+
+Remember the path — you'll offer to remove it once the tickets are filed (step 9). If the repo isn't a git repository, skip the worktree and work in place.
+
 ### 1. Gather context
 
 Work from whatever is already in the conversation. If the user passes a ticket reference (CUID, shortId, or URL) as an argument, fetch it with `exponential tickets get <id> --json` and read its body, dependencies, and comments.
@@ -188,6 +198,16 @@ You are picking up a batch of tickets just filed in Exponential. Implement them 
 > Never leave a tower of N branches each based on the previous one — a change to the base then forces a full restack of everything above it.
 ````
 </execution-prompt-template>
+
+### 9. Offer to clean up the worktree
+
+Once the tickets are filed and the execution prompt is emitted, offer to remove the worktree you created in step 0:
+
+```bash
+git worktree remove /tmp/<repo>-to-expo
+```
+
+Don't remove it without asking — the user may want to inspect it first. Nothing is lost by removing it: the tickets live in Exponential, not in the worktree.
 
 ## Ticket body template
 
