@@ -20,8 +20,10 @@ The skills are small, composable, and model-agnostic. They don't replace your ju
 | Skill | When to reach for it |
 |---|---|
 | `/grill-with-docs` | Anytime you're starting a non-trivial change. The agent grills you, updates `CONTEXT.md` and ADRs as decisions crystallise. |
-| `/to-prd` | Turn a settled conversation into a PRD and file it in Exponential as a feature. |
-| `/to-expo` | Break a PRD/plan into independently-grabbable Exponential tickets using vertical slices. Each ticket gets an auto-assigned `branchName`. |
+| `/to-prd` | Turn a settled conversation into the human PRD: a Knowledge page linked to a Feature, with EARS requirements as native rows. |
+| `/to-robo-prd` | Append the Agent PRD (implementation detail, scope map, tracer bullets) to the bottom of the feature's PRD page. |
+| `/to-tickets` | Turn the Agent PRD into few tickets (default one per scope) with the vertical-slice steps as ordered actions. Each ticket gets an auto-assigned `branchName`. |
+| `/to-expo` | Break a loose plan (no registry feature) into independently-grabbable tickets using vertical slices. For feature work, prefer `/to-tickets`. |
 | `/triage` | Sort the incoming ticket backlog by routing each one to the right state (ready-for-agent, ready-for-human, needs-info, etc). |
 | `/start-ticket` | Pick up a `READY_TO_PLAN` ticket: checks out its branch, moves it to `IN_PROGRESS`, drops a `.exponential/current-ticket` marker so `/ship-ticket` knows which ticket you're on. |
 | `/tdd` | Build a feature with a red-green-refactor loop. Default mode for new functionality. |
@@ -113,7 +115,7 @@ Once `/setup-matt-pocock-skills` and `/setup-merge-hook` are wired, every state 
 
 | Action | Ticket status |
 |---|---|
-| `/to-expo` files the ticket | `READY_TO_PLAN` |
+| `/to-tickets` / `/to-expo` files the ticket | `READY_TO_PLAN` |
 | `/start-ticket EXPO-N` | `IN_PROGRESS` |
 | `/ship-ticket` opens the PR | `QA` |
 | PR merges to your trunk | `DONE` (auto, via GitHub Action) |
@@ -126,27 +128,29 @@ A loop that uses the skills the way they were designed to compose. Adapt it.
 
 1. **Idea → aligned spec.** Don't start coding. Open a Claude session and run `/grill-with-docs`. It interviews you about the change and updates `CONTEXT.md` / ADRs inline. You leave with a sharper definition than you started with.
 
-2. **Spec → PRD in Exponential.** Run `/to-prd`. It synthesises the conversation into a PRD and files it as a feature in Exponential.
+2. **Spec → PRD in Exponential.** Run `/to-prd`. It checks whether the feature already exists in the registry (adding to it if so), then writes the human PRD as a Knowledge page linked to the feature, creates its scopes, and files the EARS requirements as native, checkable rows.
 
-3. **PRD → tickets.** Run `/to-expo`. It breaks the PRD into vertical-slice tickets with explicit dependencies, filed under the feature. Each ticket gets an auto-assigned `branchName` so `/start-ticket` knows where to check out.
+3. **PRD → Agent PRD.** When agents will build it, run `/to-robo-prd`. It appends an `## Agent PRD` section to the bottom of the same page: implementation decisions, testing decisions, a scope map with tracer bullets, rejected alternatives.
 
-4. **Backlog → routed work.** Whenever new tickets land in `BACKLOG`, run `/triage`. It moves each to:
+4. **Agent PRD → tickets.** Run `/to-tickets`. It cuts the work into FEW tickets - default one per scope - with the vertical-slice steps as ordered actions on each ticket (one branch, one PR, commit per action). The backlog stays readable; agents keep their detail. (`/to-expo` remains for plans that don't belong to a registry feature.)
+
+5. **Backlog → routed work.** Whenever new tickets land in `BACKLOG`, run `/triage`. It moves each to:
    - `READY_TO_PLAN` if fully specified for an agent
    - `BLOCKED` if it needs a human's judgement
    - `NEEDS_REFINEMENT` (with a comment carrying the question) if more info is needed
    - `ARCHIVED` if it won't be actioned
 
-5. **Start a ticket.** Pick one from the `READY_TO_PLAN` queue and run `/start-ticket EXPO-N`. It checks out the ticket's branch (creating if needed), moves the ticket to `IN_PROGRESS`, and drops `.exponential/current-ticket` so the next skill knows which ticket you're on.
+6. **Start a ticket.** Pick one from the `READY_TO_PLAN` queue and run `/start-ticket EXPO-N`. It checks out the ticket's branch (creating if needed), moves the ticket to `IN_PROGRESS`, and drops `.exponential/current-ticket` so the next skill knows which ticket you're on.
 
-6. **Build.** `/tdd` for new functionality, `/diagnosing-bugs` for bugs.
+7. **Build.** `/tdd` for new functionality, `/diagnosing-bugs` for bugs.
 
-7. **Ship.** When the work is done, run `/ship-ticket` — no arguments needed. It auto-detects the ticket from the marker, runs your discovered test/type/lint commands (use `--skip-checks` for a draft PR if work is unfinished), creates an atomic commit with the right trailer, opens a PR against the base branch from your git-flow config, links `ticket.prUrl`, and moves the ticket to `QA`.
+8. **Ship.** When the work is done, run `/ship-ticket` — no arguments needed. It auto-detects the ticket from the marker, runs your discovered test/type/lint commands (use `--skip-checks` for a draft PR if work is unfinished), creates an atomic commit with the right trailer, opens a PR against the base branch from your git-flow config, links `ticket.prUrl`, and moves the ticket to `QA`.
 
    **Stacking**: if you want to bundle a tightly-coupled second ticket into the same PR, stay on the branch, run `/start-ticket EXPO-M`, do the work, then `/ship-ticket` again. The skill detects the open PR and appends to it; both tickets end up linked to the same PR URL.
 
-8. **Merge.** When the PR merges to your trunk, the GitHub Action scaffolded by `/setup-merge-hook` finds the linked ticket(s) — directly or by walking rollup-PR commit messages for child PR refs — and moves them to `DONE`. You don't touch the ticket again.
+9. **Merge.** When the PR merges to your trunk, the GitHub Action scaffolded by `/setup-merge-hook` finds the linked ticket(s) — directly or by walking rollup-PR commit messages for child PR refs — and moves them to `DONE`. You don't touch the ticket again.
 
-9. **Maintain the design.** Once a week-ish, run `/improve-codebase-architecture` on the repo. It surfaces refactors grounded in our domain language.
+10. **Maintain the design.** Once a week-ish, run `/improve-codebase-architecture` on the repo. It surfaces refactors grounded in our domain language.
 
 The skills are designed to be invoked at the moment you'd already pause to think. They don't replace the pause — they structure it.
 
