@@ -1,0 +1,5 @@
+interface:
+  display_name: "To Robo PRD"
+  short_description: "Append the Agent PRD to a feature's page"
+policy:
+  allow_implicit_invocation: false
