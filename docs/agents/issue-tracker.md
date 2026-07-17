@@ -61,8 +61,9 @@ exponential tickets list --product agent-skills --status BLOCKED --json         
 
 ## When a skill says "publish to the issue tracker"
 
-- If the source is a **plan, spec, or PRD that needs to be broken into multiple tickets**: invoke `/to-expo`. It handles vertical slicing, dependency wiring, and decision comments.
-- If the source is a **single ticket** (e.g. a PRD as a feature, or a one-off bug): run `exponential tickets create ...` directly, or `exponential features create ...` for PRD-shaped work.
+- If the source is **feature work** (a PRD-shaped plan for a product capability): follow the registry flow — `/to-prd` (human PRD page + native EARS requirement rows on the Feature) → `/to-robo-prd` (Agent PRD on the same page) → `/to-tickets` (few tickets, default one per scope, with the vertical slices as ordered actions). Do NOT route feature work to `/to-expo`.
+- If the source is a **loose plan that doesn't belong to a registry feature** (a cross-product epic, standalone chores): invoke `/to-expo`. It handles vertical slicing, dependency wiring, and decision comments.
+- If the source is a **single ticket** (e.g. a one-off bug): run `exponential tickets create ...` directly.
 
 ## When a skill says "fetch the relevant ticket"
 
