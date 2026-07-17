@@ -1,0 +1,3 @@
+interface:
+  display_name: "Setup Git Flow"
+  short_description: "Detect and persist the repo's promotion chain"

@@ -1,0 +1,3 @@
+interface:
+  display_name: "Ship This"
+  short_description: "Commit, PR, review loop, and squash-merge"

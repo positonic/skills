@@ -5,7 +5,7 @@ description: Ship one Exponential **Ticket** — commit any leftover work, run p
 
 # Ship Ticket
 
-Ship exactly one Ticket per invocation. To put multiple Tickets on one PR, stay on the branch and run `/ship-ticket` again after `/start-ticket`-ing the next Ticket — same-branch reuse triggers **stack mode** automatically. See [ADR-0003](../../../docs/adr/0003-one-ticket-per-ship-stacking-via-branch.md).
+Ship exactly one Ticket per invocation. To put multiple Tickets on one PR, stay on the branch and run `/ship-ticket` again after `/start-ticket`-ing the next Ticket — same-branch reuse triggers **stack mode** automatically. See [ADR-0004](../../../.agents/adr/0004-one-ticket-per-ship-stacking-via-branch.md).
 
 ## Usage
 
@@ -79,7 +79,7 @@ EOF
 
 - `<type>` derives from Ticket type: `FEATURE` → `feat`, `BUG` → `fix`, `CHORE` → `chore`, `IMPROVEMENT` → `refactor`, `SPIKE` → `chore`, `RESEARCH` → `docs`.
 - `<scope>` is optional. Omit it if you don't know — `feat: <title>` is fine.
-- Trailers: `Refs` is human-readable, `Exponential-Ticket` is machine-readable. The trailers are decoration only — see [ADR-0002](../../../docs/adr/0002-pr-url-primary-trailer-fallback.md). PR-URL linkage is the source of truth.
+- Trailers: `Refs` is human-readable, `Exponential-Ticket` is machine-readable. The trailers are decoration only — see [ADR-0003](../../../.agents/adr/0003-pr-url-primary-trailer-fallback.md). PR-URL linkage is the source of truth.
 
 **State B — clean tree + N>0 commits ahead:**
 

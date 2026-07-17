@@ -7,7 +7,7 @@ description: Scaffold the GitHub Action that auto-promotes Exponential **Tickets
 
 Wire up the GitHub Action that closes the Ticket lifecycle: when a feature PR (or a **Rollup PR** that promotes work through the chain) merges into the **deploy trigger** branch, the Action looks up every Ticket linked to the merged PR (and to any child PRs referenced from a Rollup PR's commit messages) and transitions them to `DONE`.
 
-PR-URL is the primary linkage and commit trailers are decoration — see [ADR-0002](../../../docs/adr/0002-pr-url-primary-trailer-fallback.md).
+PR-URL is the primary linkage and commit trailers are decoration — see [ADR-0003](../../../.agents/adr/0003-pr-url-primary-trailer-fallback.md).
 
 ## Prerequisites
 

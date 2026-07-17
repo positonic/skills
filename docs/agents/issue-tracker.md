@@ -67,3 +67,14 @@ exponential tickets list --product agent-skills --status BLOCKED --json         
 ## When a skill says "fetch the relevant ticket"
 
 Run `exponential tickets get <ticket-cuid> --json`. The output includes the ticket body, status, dependencies, linked actions, and the full comment thread.
+
+## Wayfinding operations
+
+Used by `/wayfinder`. The **map** is a Feature; its tickets are the map's children.
+
+- **Map**: a Feature named `Wayfinder: <destination>` (`exponential features create --product agent-skills -n "Wayfinder: <destination>" -d "<one-line destination>" --status DEFINED --json`). The map body (Notes / Decisions-so-far / Fog) lives on a linked Knowledge page: `exponential pages create -t "Wayfinder map: <destination>" --body-file <path> --json`, then `exponential features link-page --feature <id> --page <id>`. Use an **epic** instead of a feature only when the destination spans products.
+- **Child ticket**: a ticket under the map feature (`exponential tickets create --product agent-skills --feature <map-feature-cuid> ...`). Ticket types map as: `research` → `RESEARCH`, `grilling` → `RESEARCH`, `prototype` → `SPIKE`, `task` → `CHORE`. HITL types (`grilling`, `prototype`) get `--status NEEDS_REFINEMENT`; AFK types (`research`, and `task` when an agent can do it) get `--status READY_TO_PLAN`.
+- **Blocking**: native edges — `exponential tickets block <child-cuid> --by <blocker-cuid>`. A ticket is unblocked when `openBlockerCount` is 0.
+- **Frontier query**: `exponential tickets list --feature <map-feature-cuid> --json`, keep open tickets with `openBlockerCount == 0` and no assignee; first in map order wins.
+- **Claim**: `exponential tickets update --id <cuid> --assignee <user-id>` — the session's first write. The assignee is the claim.
+- **Resolve**: `exponential tickets comment add --id <cuid> -m "<the decision>"`, then `exponential tickets update --id <cuid> --status DONE`, then update the map page's Decisions-so-far with a one-line gist + the ticket CUID (`exponential pages update`).

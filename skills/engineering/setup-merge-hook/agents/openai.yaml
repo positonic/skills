@@ -1,0 +1,3 @@
+interface:
+  display_name: "Setup Merge Hook"
+  short_description: "Scaffold the QA-to-DONE promotion Action"
