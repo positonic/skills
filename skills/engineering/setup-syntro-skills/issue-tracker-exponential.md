@@ -4,7 +4,7 @@ Issues and PRDs for this repo live in [Exponential](https://www.exponential.im).
 
 ## This repo's coordinates
 
-Replace the placeholders below with the values captured during `/setup-matt-pocock-skills`. These are the defaults every CLI command in this repo should target.
+Replace the placeholders below with the values captured during `/setup-syntro-skills`. These are the defaults every CLI command in this repo should target.
 
 - **Workspace**: `<workspace-slug-or-cuid>`
 - **Product**: `<product-slug-or-cuid>`
