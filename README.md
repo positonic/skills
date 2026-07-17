@@ -3,7 +3,7 @@
   onboarding and conventions, read EXPONENTIAL-TEAM.md instead.
 -->
 
-> **Exponential team — start with [EXPONENTIAL-TEAM.md](./EXPONENTIAL-TEAM.md), not this README.** Install with `npx skills@latest add positonic/skills` (not `mattpocock/skills`).
+> **Exponential team — start with [EXPONENTIAL-TEAM.md](./EXPONENTIAL-TEAM.md), not this README.** Install as the managed plugin: `/plugin marketplace add positonic/skills` then `/plugin install syntro-skills@syntrofi` (not `mattpocock/skills`).
 
 ---
 

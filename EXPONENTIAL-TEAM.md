@@ -45,25 +45,36 @@ exponential workspaces set-default <workspace-slug>   # so future commands don't
 
 ### 2. Install the skills
 
-Two install modes — pick one. The difference matters; see the comparison table below.
+Three install modes — pick one. The difference matters; see the comparison table below.
 
-**Mode A — for most engineers (stable, per-project, curated set):**
+**Mode A — the team standard (managed plugin, auto-updating):**
+
+Inside Claude Code:
+
+```
+/plugin marketplace add positonic/skills
+/plugin install syntro-skills@syntrofi
+```
+
+That's it — one-time. When a new version ships (we bump the plugin version on merge to `main`), your install updates itself. You never re-install, and renamed/deleted skills clean up correctly.
+
+**Mode B — per-project copies (if you want to cherry-pick or hack locally):**
 
 ```bash
 cd <your-repo>
 npx skills@latest add positonic/skills
 ```
 
-I suggest installing it globally (it's a config)
+A picker appears. Always include `setup-matt-pocock-skills`; include the rest based on taste. Note: re-run after each release, and delete stale copies yourself when skills are renamed.
 
-A picker appears. Always include `setup-matt-pocock-skills` and `to-expo`; include the rest based on taste.
-
-**Mode B — for skill contributors (live edits, user-global):**
+**Mode C — for skill contributors (live edits, user-global):**
 
 ```bash
 git clone git@github.com:positonic/skills.git ~/code/skills
 ~/code/skills/scripts/link-skills.sh
 ```
+
+To upgrade later: `~/code/skills/scripts/upgrade.sh` (pulls, re-links, and prunes symlinks left dangling by renames).
 
 ### 3. Run setup in each repo
 
@@ -96,18 +107,19 @@ The skill prompts you to paste an Exponential JWT (get it via `exponential auth 
 
 Without this, tickets stay in `QA` after `/ship-ticket` and you flip them to `DONE` by hand.
 
-## Install Mode A vs Mode B: which to pick
+## Install modes: which to pick
 
-|   | Mode A: `npx skills add` | Mode B: `link-skills.sh` |
-|---|---|---|
-| Source | Pushed GitHub repo | Your local working tree |
-| Sees uncommitted changes? | No | Yes (immediate) |
-| Respects `plugin.json` filter? | Yes — only curated, published skills | No — links **everything**, including in-progress drafts |
-| Install scope | Project-scoped (`.claude/` in the current repo) | User-global (`~/.claude/skills/`, available everywhere) |
-| Picker UI? | Yes, you choose which skills to install | No, links everything |
-| Right for | Day-to-day use. Same skill set as your teammates. | Editing the skills themselves and iterating without commit-push round-trips. |
+|   | Mode A: plugin | Mode B: `npx skills add` | Mode C: `link-skills.sh` |
+|---|---|---|---|
+| Source | Published plugin version | Pushed GitHub repo | Your local working tree |
+| Upgrades | **Automatic** on version bump | Manual re-run per release | `scripts/upgrade.sh` (or `git pull`) |
+| Handles renames/deletions? | Yes | No — stale copies linger | Only via `upgrade.sh` pruning |
+| Sees uncommitted changes? | No | No | Yes (immediate) |
+| Respects `plugin.json` filter? | Yes — exactly the promoted set | Yes — curated, with a picker | No — links **everything**, including in-progress drafts |
+| Install scope | User-global (managed by Claude Code) | Project-scoped (`.claude/` in the current repo) | User-global (`~/.claude/skills/`, everywhere) |
+| Right for | Day-to-day use. Same skill set as your teammates, always current. | Cherry-picking a subset, or hacking copies in one repo. | Editing the skills themselves and iterating without commit-push round-trips. |
 
-**Rule of thumb**: if you're not editing the skills repo, you want Mode A. If you are, Mode B.
+**Rule of thumb**: everyone starts on Mode A. Drop to Mode C only if you're editing the skills repo itself.
 
 ## The Ticket lifecycle, at a glance
 
