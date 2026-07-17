@@ -8,7 +8,7 @@ This skill takes the current conversation context and codebase understanding and
 
 A PRD page has two zones for two readers. This skill writes the top (human) zone. `/to-robo-prd` appends the bottom `## Agent PRD` zone with full implementation detail, and `/to-tickets` turns that into backlog work. A PRD is an optional origin - a feature may also carry only direct requirement rows - so run this skill when the feature needs an argued case, not for every change.
 
-The issue tracker configuration should have been provided to you - run `/setup-matt-pocock-skills` if not. You need a target **product** (slug or CUID); ask if the user hasn't said which.
+The issue tracker configuration should have been provided to you - run `/setup-syntro-skills` if not. You need a target **product** (slug or CUID); ask if the user hasn't said which.
 
 ## Process
 

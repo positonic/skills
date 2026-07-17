@@ -3,7 +3,7 @@
   onboarding and conventions, read EXPONENTIAL-TEAM.md instead.
 -->
 
-> **Exponential team — start with [EXPONENTIAL-TEAM.md](./EXPONENTIAL-TEAM.md), not this README.** Install as the managed plugin: `/plugin marketplace add positonic/skills` then `/plugin install syntro-skills@syntrofi` (not `mattpocock/skills`).
+> **Exponential team — start with [EXPONENTIAL-TEAM.md](./EXPONENTIAL-TEAM.md), not this README.** Team-standard install: `git clone git@github.com:positonic/skills.git ~/code/skills && ~/code/skills/scripts/link-skills.sh` — upgrade later with `scripts/upgrade.sh`. (Managed plugin `syntro-skills@syntrofi` also available; see EXPONENTIAL-TEAM.md.)
 
 ---
 
@@ -39,9 +39,9 @@ If you want to keep up with changes to these skills, and any new ones I create, 
 npx skills@latest add mattpocock/skills
 ```
 
-2. Pick the skills you want, and which coding agents you want to install them on. **Make sure you select `/setup-matt-pocock-skills`**.
+2. Pick the skills you want, and which coding agents you want to install them on. **Make sure you select `/setup-syntro-skills`**.
 
-3. Run `/setup-matt-pocock-skills` in your agent. It will:
+3. Run `/setup-syntro-skills` in your agent. It will:
    - Ask you which issue tracker you want to use (GitHub, Linear, or local files)
    - Ask you what labels you apply to tickets when you triage them (`/triage` uses labels)
    - Ask you where you want to save any docs we create
@@ -66,7 +66,7 @@ claude plugin marketplace add mattpocock/skills
 claude plugin install mattpocock-skills@mattpocock
 ```
 
-Then run `/setup-matt-pocock-skills` once per repo, exactly as in the quickstart above.
+Then run `/setup-syntro-skills` once per repo, exactly as in the quickstart above.
 
 Two ways to install, two philosophies:
 
@@ -189,7 +189,7 @@ Skills I use daily for code work.
 - **[grill-with-docs](./skills/engineering/grill-with-docs/SKILL.md)** — Grilling session that also builds your project's domain model, sharpening terminology and updating `CONTEXT.md` and ADRs inline.
 - **[triage](./skills/engineering/triage/SKILL.md)** — Move issues through a state machine of triage roles.
 - **[improve-codebase-architecture](./skills/engineering/improve-codebase-architecture/SKILL.md)** — Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.
-- **[setup-matt-pocock-skills](./skills/engineering/setup-matt-pocock-skills/SKILL.md)** — Configure this repo for the engineering skills (issue tracker, triage labels, domain doc layout). Run once per repo before using the other engineering skills.
+- **[setup-syntro-skills](./skills/engineering/setup-syntro-skills/SKILL.md)** — Configure this repo for the engineering skills (issue tracker, triage labels, domain doc layout). Run once per repo before using the other engineering skills.
 - **[to-prd](./skills/engineering/to-prd/SKILL.md)** — Turn the current conversation into the human PRD: a page linked to a Feature in Exponential, with EARS requirements as native rows. No interview — just synthesizes what you've already discussed.
 - **[to-robo-prd](./skills/engineering/to-robo-prd/SKILL.md)** — Append the Agent PRD (implementation detail, scope map, tracer bullets) to the bottom of a feature's PRD page.
 - **[to-tickets](./skills/engineering/to-tickets/SKILL.md)** — Turn a feature's Agent PRD into few tickets (default one per scope) with the vertical-slice steps as ordered actions.

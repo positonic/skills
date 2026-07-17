@@ -47,41 +47,47 @@ exponential workspaces set-default <workspace-slug>   # so future commands don't
 
 Three install modes — pick one. The difference matters; see the comparison table below.
 
-**Mode A — the team standard (managed plugin, auto-updating):**
-
-Inside Claude Code:
-
-```
-/plugin marketplace add positonic/skills
-/plugin install syntro-skills@syntrofi
-```
-
-That's it — one-time. When a new version ships (we bump the plugin version on merge to `main`), your install updates itself. You never re-install, and renamed/deleted skills clean up correctly.
-
-**Mode B — per-project copies (if you want to cherry-pick or hack locally):**
-
-```bash
-cd <your-repo>
-npx skills@latest add positonic/skills
-```
-
-A picker appears. Always include `setup-matt-pocock-skills`; include the rest based on taste. Note: re-run after each release, and delete stale copies yourself when skills are renamed.
-
-**Mode C — for skill contributors (live edits, user-global):**
+**Mode A — the team standard (clone + symlink, user-global):**
 
 ```bash
 git clone git@github.com:positonic/skills.git ~/code/skills
 ~/code/skills/scripts/link-skills.sh
 ```
 
-To upgrade later: `~/code/skills/scripts/upgrade.sh` (pulls, re-links, and prunes symlinks left dangling by renames).
+To upgrade later — one command, handles renamed/deleted skills too:
+
+```bash
+~/code/skills/scripts/upgrade.sh
+```
+
+Because the links point at your working tree, this is also the contributor mode: edits to the repo take effect in your next session.
+
+**Mode B — managed plugin (auto-updating, curated set):**
+
+In a terminal:
+
+```bash
+claude plugin marketplace add positonic/skills
+claude plugin install syntro-skills@syntrofi
+```
+
+(Or the `/plugin` slash commands in a `claude` CLI session, or the **Manage Plugins** UI in the VSCode extension.) One-time; when we bump the plugin version on `main`, your install updates itself. Ships only the promoted skill set — no in-progress drafts. Don't combine with Mode A — you'd get every skill twice.
+
+**Mode C — per-project copies (cherry-picking a subset):**
+
+```bash
+cd <your-repo>
+npx skills@latest add positonic/skills
+```
+
+A picker appears. Always include `setup-syntro-skills`; include the rest based on taste. Note: re-run after each release, and delete stale copies yourself when skills are renamed.
 
 ### 3. Run setup in each repo
 
 In a fresh Claude Code session opened in the target repo:
 
 ```
-/setup-matt-pocock-skills
+/setup-syntro-skills
 ```
 
 The skill detects that Exponential is your tracker (if you're using Exponential for tracking and have it written as such in your AGENTS files..), asks which workspace + product this repo maps to, and writes:
@@ -93,7 +99,7 @@ The skill detects that Exponential is your tracker (if you're using Exponential 
 
 After this, every other skill in the set "just works" against our Exponential product.
 
-`/setup-matt-pocock-skills` also invokes `/setup-git-flow` as a sub-step. That one detects your repo's branching model (trunk-based, `develop → main`, or full `develop → staging → main`) by inspecting remote branches via `gh`, confirms with you, and writes `docs/agents/git-flow.md`. `/ship-ticket` reads it to pick the right base branch for new PRs; `/setup-merge-hook` (below) reads it to know which merge triggers `DONE`.
+`/setup-syntro-skills` also invokes `/setup-git-flow` as a sub-step. That one detects your repo's branching model (trunk-based, `develop → main`, or full `develop → staging → main`) by inspecting remote branches via `gh`, confirms with you, and writes `docs/agents/git-flow.md`. `/ship-ticket` reads it to pick the right base branch for new PRs; `/setup-merge-hook` (below) reads it to know which merge triggers `DONE`.
 
 ### 4. (Optional but recommended) Wire auto-promotion to `DONE` on merge
 
@@ -109,21 +115,21 @@ Without this, tickets stay in `QA` after `/ship-ticket` and you flip them to `DO
 
 ## Install modes: which to pick
 
-|   | Mode A: plugin | Mode B: `npx skills add` | Mode C: `link-skills.sh` |
+|   | Mode A: clone + `link-skills.sh` | Mode B: plugin | Mode C: `npx skills add` |
 |---|---|---|---|
-| Source | Published plugin version | Pushed GitHub repo | Your local working tree |
-| Upgrades | **Automatic** on version bump | Manual re-run per release | `scripts/upgrade.sh` (or `git pull`) |
-| Handles renames/deletions? | Yes | No — stale copies linger | Only via `upgrade.sh` pruning |
-| Sees uncommitted changes? | No | No | Yes (immediate) |
-| Respects `plugin.json` filter? | Yes — exactly the promoted set | Yes — curated, with a picker | No — links **everything**, including in-progress drafts |
-| Install scope | User-global (managed by Claude Code) | Project-scoped (`.claude/` in the current repo) | User-global (`~/.claude/skills/`, everywhere) |
-| Right for | Day-to-day use. Same skill set as your teammates, always current. | Cherry-picking a subset, or hacking copies in one repo. | Editing the skills themselves and iterating without commit-push round-trips. |
+| Source | Your local working tree | Published plugin version | Pushed GitHub repo |
+| Upgrades | `scripts/upgrade.sh` (one command) | **Automatic** on version bump | Manual re-run per release |
+| Handles renames/deletions? | Yes — `upgrade.sh` prunes | Yes | No — stale copies linger |
+| Sees uncommitted changes? | Yes (immediate) | No | No |
+| Respects `plugin.json` filter? | No — links **everything**, including in-progress drafts | Yes — exactly the promoted set | Yes — curated, with a picker |
+| Install scope | User-global (`~/.claude/skills/`, everywhere) | User-global (managed by Claude Code) | Project-scoped (`.claude/` in the current repo) |
+| Right for | The team default: day-to-day use *and* editing skills without reinstall round-trips. | Set-and-forget: same curated set, zero maintenance, no clone needed. | Cherry-picking a subset, or hacking copies in one repo. |
 
-**Rule of thumb**: everyone starts on Mode A. Drop to Mode C only if you're editing the skills repo itself.
+**Rule of thumb**: everyone starts on Mode A (it's what the team runs). Pick Mode B if you don't want a clone on your machine.
 
 ## The Ticket lifecycle, at a glance
 
-Once `/setup-matt-pocock-skills` and `/setup-merge-hook` are wired, every state transition is driven by a skill or the merge event — no manual status updates needed.
+Once `/setup-syntro-skills` and `/setup-merge-hook` are wired, every state transition is driven by a skill or the merge event — no manual status updates needed.
 
 | Action | Ticket status |
 |---|---|
@@ -231,7 +237,7 @@ Fixes follow the same flow minus the bucket-choice step. Small fix? Edit, test, 
 ## Tips and gotchas
 
 - **Re-run `npx skills@latest add positonic/skills` periodically** in each project to pull updates. It's idempotent.
-- **`/setup-matt-pocock-skills` is per-repo.** Run it once per repo. Re-run if you switch trackers or want to start clean.
+- **`/setup-syntro-skills` is per-repo.** Run it once per repo. Re-run if you switch trackers or want to start clean.
 - **You can hand-edit `docs/agents/*.md` after setup.** The other skills read these files; edits stick.
 - **Triage roles use Exponential ticket statuses directly** — no labels, no body markers. Each role maps to a unique `ticket.status` so `/triage` can route on a single `--status` filter.
 - **The `exponential` CLI must be on `$PATH` and authed** for any of the publish/read skills to work. If they fail with auth errors, run `exponential auth login` again.

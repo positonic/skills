@@ -27,6 +27,8 @@ To (re)link every skill into the local harness skill directories (`~/.claude/ski
 
 This fork keeps its own planning-suite names: `/to-prd` (two-zone PRD pages), `/to-robo-prd`, and `/to-tickets` (Exponential, one ticket per scope with ordered actions). Upstream's `to-spec` and its tracker-agnostic `to-tickets` are superseded by these — when syncing upstream, resolve collisions on those paths in this fork's favour and port content improvements instead.
 
+Upstream's `setup-matt-pocock-skills` is renamed **`setup-syntro-skills`** here (same behaviour, Exponential-aware). When syncing upstream, apply upstream's changes to that skill onto `skills/engineering/setup-syntro-skills/` and re-run the rename substitution on any new references.
+
 The `docs/engineering/` and `docs/productivity/` pages are vendored from upstream and may reference upstream skill names (`to-spec`, the tracker-agnostic `to-tickets`); don't treat them as this fork's canon — `EXPONENTIAL-TEAM.md` is the team-facing guide. Fork-specific skills don't have docs pages.
 
 ## Agent skills
