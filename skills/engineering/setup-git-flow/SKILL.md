@@ -89,7 +89,7 @@ promotionChain:
 **Promotion chain**: `<a>` → `<b>` → `<c>`
 
 - **featureBase** (`<branch>`) — new feature PRs (the output of `/ship-ticket`) target this branch.
-- **deployTrigger** (`<branch>`) — when a PR merges into this branch, the GitHub Action scaffolded by `/setup-merge-hook` transitions any linked Tickets from `QA` to `DONE`.
+- **deployTrigger** (`<branch>`) — when a PR merges into this branch, the GitHub Action scaffolded by `/setup-merge-hook` acts on any linked Tickets: transitioning them from `QA` to `DONE`, ticking their scope's feature requirements as met, or both.
 
 ## How skills use this file
 
@@ -105,5 +105,5 @@ If `docs/agents/` does not exist yet, create it. Don't touch any other files in 
 Once written, point out:
 
 - `/ship-ticket` will now know what base branch to target.
-- `/setup-merge-hook` is the next step to wire up auto-promotion to `DONE`.
+- `/setup-merge-hook` is the next step to wire up the merge Action (promotion to `DONE`, requirement ticking, or both).
 - The file is plain markdown — they can edit it directly later. Re-running this skill only needed if the branching model itself changes.

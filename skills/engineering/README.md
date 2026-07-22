@@ -33,6 +33,6 @@ Model- or user-reachable (rich trigger phrasing so the model can reach for them)
 - **[ship-ticket](./ship-ticket/SKILL.md)** — Ship one Exponential Ticket: commit leftovers, run pre-ship checks, open or extend a PR, link it back to the Ticket, and transition to `QA`.
 - **[ship-this](./ship-this/SKILL.md)** — Ship the current working copy end-to-end with zero hand-holding: branch if needed, commit, push, open a PR, run CodeRabbit review + autofix, wait for CI, and squash-merge.
 - **[setup-git-flow](./setup-git-flow/SKILL.md)** — Detect this repo's branching model and persist the resulting Promotion chain to `docs/agents/git-flow.md`.
-- **[setup-merge-hook](./setup-merge-hook/SKILL.md)** — Scaffold the GitHub Action that auto-promotes Exponential Tickets to `DONE` on merge to the deploy trigger.
+- **[setup-merge-hook](./setup-merge-hook/SKILL.md)** — Scaffold the GitHub Action that promotes Exponential Tickets to `DONE` and/or ticks the merged scope's feature requirements, on merge to the deploy trigger.
 - **[code-review](./code-review/SKILL.md)** — Two-axis review of the diff since a fixed point: **Standards** (does it follow the repo's coding standards, plus a Fowler smell baseline?) and **Spec** (does it faithfully implement the originating issue/PRD?), run as parallel sub-agents.
 - **[resolving-merge-conflicts](./resolving-merge-conflicts/SKILL.md)** — Work through an in-progress git merge or rebase conflict hunk by hunk, resolving by intent traced to each side's primary source, then finish the operation — never `--abort`.

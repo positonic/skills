@@ -101,17 +101,24 @@ After this, every other skill in the set "just works" against our Exponential pr
 
 `/setup-syntro-skills` also invokes `/setup-git-flow` as a sub-step. That one detects your repo's branching model (trunk-based, `develop → main`, or full `develop → staging → main`) by inspecting remote branches via `gh`, confirms with you, and writes `docs/agents/git-flow.md`. `/ship-ticket` reads it to pick the right base branch for new PRs; `/setup-merge-hook` (below) reads it to know which merge triggers `DONE`.
 
-### 4. (Optional but recommended) Wire auto-promotion to `DONE` on merge
+### 4. (Optional but recommended) Wire the merge hook
 
-If you want tickets to move from `QA` to `DONE` automatically when their PR merges to your trunk — no manual status updates after `/ship-ticket` — run:
+Run:
 
 ```
 /setup-merge-hook
 ```
 
-The skill prompts you to paste an Exponential JWT (get it via `exponential auth show --token`), sets it as a repo secret called `EXPONENTIAL_TOKEN` via `gh secret set`, and scaffolds `.github/workflows/exponential-promote.yml`. It does **not** commit — review the workflow file, then commit and push to activate. The Action handles direct PRs (feature → trunk) and rollup PRs (e.g. `develop → main`) transparently.
+It asks which of two things should happen when a PR merges to your trunk. They're independent — pick either, or both:
 
-Without this, tickets stay in `QA` after `/ship-ticket` and you flip them to `DONE` by hand.
+- **promote** — tickets move `QA` → `DONE` automatically, no manual status updates after `/ship-ticket`. Scaffolds `.github/workflows/exponential-promote.yml`.
+- **requirements** — the merged ticket's scope has its feature requirements ticked **met**, and ticket status is left alone. Scaffolds `.github/workflows/exponential-requirements.yml`. Pick this (and not promote) if your repo keeps a human QA gate: you still get requirement coverage that tracks what actually shipped, without losing the gate.
+
+Either way the skill sets your Exponential JWT as a repo secret called `EXPONENTIAL_TOKEN` via `gh secret set`, and captures the API URL plus your product/workspace into the workflow. It does **not** commit — review the workflow file, then commit and push to activate. The Action handles direct PRs (feature → trunk) and rollup PRs (e.g. `develop → main`) transparently.
+
+Requirement ticking means "this shipped to trunk green", not "someone wrote it down". It assumes **one ticket = one scope = one PR**; if a scope ever spans several PRs, the first merge ticks the whole scope and over-claims. The generated workflow says so in its own comments.
+
+Without any of this, tickets stay in `QA` after `/ship-ticket` and you flip them to `DONE` by hand.
 
 ## Install modes: which to pick
 
@@ -166,7 +173,7 @@ A loop that uses the skills the way they were designed to compose. Adapt it.
 
    **Stacking**: if you want to bundle a tightly-coupled second ticket into the same PR, stay on the branch, run `/start-ticket EXPO-M`, do the work, then `/ship-ticket` again. The skill detects the open PR and appends to it; both tickets end up linked to the same PR URL.
 
-9. **Merge.** When the PR merges to your trunk, the GitHub Action scaffolded by `/setup-merge-hook` finds the linked ticket(s) — directly or by walking rollup-PR commit messages for child PR refs — and moves them to `DONE`. You don't touch the ticket again.
+9. **Merge.** When the PR merges to your trunk, the GitHub Action scaffolded by `/setup-merge-hook` finds the linked ticket(s) — directly or by walking rollup-PR commit messages for child PR refs — and, depending on the mode you chose, moves them to `DONE` and/or ticks their scope's feature requirements as met. You don't touch the ticket again.
 
 10. **Maintain the design.** Once a week-ish, run `/improve-codebase-architecture` on the repo. It surfaces refactors grounded in our domain language.
 

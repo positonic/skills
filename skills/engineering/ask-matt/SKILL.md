@@ -75,4 +75,6 @@ Off the main flow entirely.
 
 ## Precondition
 
-**`/setup-syntro-skills`** — run before your first engineering flow to configure the issue tracker, triage labels, and doc layout the other skills assume. Custom issue trackers also work.
+**`/setup-syntro-skills`** — run before your first engineering flow to configure the issue tracker, triage labels, and doc layout the other skills assume. Custom issue trackers also work. It invokes **`/setup-git-flow`** as a sub-step to record the repo's branching model.
+
+**`/setup-merge-hook`** — optional, once per repo, after `/setup-git-flow`. Scaffolds the GitHub Action that fires when a PR merges to the deploy trigger: promote Tickets `QA` → `DONE`, tick the merged scope's feature requirements as met, or both. Without it, those are manual steps after `/ship-ticket`.
