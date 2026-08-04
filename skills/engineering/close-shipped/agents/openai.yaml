@@ -1,0 +1,5 @@
+interface:
+  display_name: "Close Shipped"
+  short_description: "Remove merged worktrees and promote QA Tickets to DONE"
+policy:
+  allow_implicit_invocation: false
