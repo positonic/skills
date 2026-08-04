@@ -1,6 +1,6 @@
 ---
 name: ship-ticket
-description: Ship one Exponential **Ticket** — commit any leftover work, run pre-ship checks, open (or extend) a PR, link the PR back to the Ticket, and transition the Ticket to `QA`. The back-end bookend to `/start-ticket`. Runs in **new PR mode** for the first Ticket on a branch and **stack mode** for subsequent Tickets on the same branch. Use when work for a Ticket is ready for review.
+description: Ship one Exponential **Ticket** — commit any leftover work, run pre-ship checks, open (or extend) a PR, link the PR back to the Ticket, transition the Ticket to `QA`, then wait for the repo's automated reviewer and apply its findings. The back-end bookend to `/start-ticket`. Runs in **new PR mode** for the first Ticket on a branch and **stack mode** for subsequent Tickets on the same branch. Merges only when asked (`--merge`). Use when work for a Ticket is ready for review.
 ---
 
 # Ship Ticket
@@ -10,11 +10,13 @@ Ship exactly one Ticket per invocation. To put multiple Tickets on one PR, stay 
 ## Usage
 
 ```
-/ship-ticket [<cuid-or-shortId>] [--skip-checks]
+/ship-ticket [<cuid-or-shortId>] [--skip-checks] [--no-review] [--merge]
 ```
 
 - `<cuid-or-shortId>` (optional): explicit Ticket. Overrides auto-detection.
 - `--skip-checks`: bypass pre-ship checks. PR is opened as **draft** to signal incomplete verification.
+- `--no-review`: skip the review + autofix loop (step 8). The PR is left exactly as pushed.
+- `--merge`: after the review loop and CI, squash-merge the PR (step 9). **Off by default** — shipping a Ticket normally means putting it *in review*, not on the Trunk.
 
 ## Prerequisites
 
@@ -163,7 +165,38 @@ exponential tickets update --id <cuid> \
 
 `--branch` is a no-op if it's already set to the current branch, but harmless. `--pr` is what powers the GitHub Action's `findByPrUrl` lookup at merge time.
 
-### 8. Clear the marker
+### 8. Review + autofix loop
+
+Skip entirely if `--no-review` or `--skip-checks` was passed.
+
+The Ticket is already in `QA` and linked by now — that bookkeeping is deliberately done *first*, so a reviewer that hangs or a fix that fails can't leave the Ticket stranded in `IN_PROGRESS`. This step is best-effort polish on top.
+
+Run the loop exactly as [`/ship-this` step 7](../ship-this/SKILL.md#7-review--autofix-loop) documents it: probe for a reviewer (PR-Agent → CodeRabbit → local `/pr-review`), wait on the head SHA in a **background** job rather than polling inline, apply the findings with judgement, commit per finding, push. Two rounds maximum.
+
+Two things specific to shipping a Ticket:
+
+- **Stack mode.** The PR may carry other Tickets' commits. The reviewer reviews the whole PR, so it will surface findings in code this invocation didn't touch. Fix them anyway — they're going to the Trunk on this PR — but attribute them in your report so it's clear which Ticket they belonged to.
+- **Fix commits don't need Ticket trailers.** They're follow-ups to commits that already carry them. `fix: <one-line>` is enough; PR-URL linkage is the source of truth ([ADR-0003](../../../.agents/adr/0003-pr-url-primary-trailer-fallback.md)).
+
+If the loop fails at any point, say so and carry on to step 10 — the Ticket is shipped either way.
+
+### 9. Merge (only with `--merge`)
+
+Without `--merge`, skip this — stop at "shipped, in review". That's the default because **Ship** and **merge** are different events: shipping puts the work in review, merging puts it on the Trunk, and the `QA → DONE` promotion is the merge hook's job, not this skill's.
+
+With `--merge`, wait for CI and squash-merge:
+
+```bash
+gh pr checks --watch --fail-fast     # background job — CI outlasts a foreground call
+gh pr merge --squash --delete-branch
+```
+
+- Any check red → surface the failing check and log link, **don't merge**, and leave the Ticket in `QA`.
+- Branch protection blocking on required reviewers → `gh pr merge --squash --auto --delete-branch` instead, and tell the user the merge is *queued*, not done.
+- **Stack mode + `--merge` deserves a pause.** Merging lands every Ticket on the PR, not just this one. Confirm with the user via `AskUserQuestion` before merging a stacked PR, naming the other Tickets that will go with it.
+- Don't transition the Ticket to `DONE` by hand. The merge hook scaffolded by `/setup-merge-hook` does that on merge into the deploy trigger; doing it here would double-write and mask a broken hook.
+
+### 10. Clear the marker
 
 On success only:
 
@@ -171,15 +204,17 @@ On success only:
 rm -f .exponential/current-ticket
 ```
 
-If anything in steps 5–7 failed, **leave the marker** so the user can re-invoke `/ship-ticket` cleanly.
+If anything in steps 5–7 failed, **leave the marker** so the user can re-invoke `/ship-ticket` cleanly. A failure in step 8 or 9 does *not* hold the marker — the Ticket shipped; re-running `/ship-ticket` wouldn't retry a review.
 
-### 9. Report
+### 11. Report
 
 Print:
 
 - PR URL (clickable)
 - Mode (new PR vs stack)
 - Ticket status transition (`IN_PROGRESS → QA`)
+- Which reviewer ran, how many findings it raised, which you applied and which you skipped (with the reason) — or that the loop was skipped
+- Final state: `in review` / `merged` / `auto-merge queued` / `merge blocked by <check>`
 - Reminder: once the PR merges into the **deploy trigger**, the Action scaffolded by `/setup-merge-hook` will auto-promote to `DONE`. If `/setup-merge-hook` hasn't been run, prompt the user.
 
 ## Failure modes
@@ -190,9 +225,12 @@ Print:
 - **PR exists in draft + this invocation has `--skip-checks`** — leave it draft.
 - **PR exists ready + this invocation has `--skip-checks`** — leave it ready; don't downgrade.
 - **`docs/agents/git-flow.md` missing** — warn loudly, default to `main`, recommend `/setup-git-flow`.
+- **Review loop fails or times out** — report it and continue. The Ticket is shipped and in `QA` regardless; the review is polish, not a gate.
+- **`--merge` with red CI** — don't merge, leave the Ticket in `QA`, surface the failing check.
 
 ## What this skill does NOT do
 
 - It does not unship a Ticket (no automatic `QA → IN_PROGRESS` rollback). Deferred.
 - It does not clean up abandoned PRs. Deferred.
-- It does not promote `QA → DONE` itself — that's the GitHub Action's job, scaffolded by `/setup-merge-hook`.
+- It does not promote `QA → DONE` itself — that's the GitHub Action's job, scaffolded by `/setup-merge-hook`. This holds even under `--merge`.
+- It does not merge unless you pass `--merge`. Default behaviour stops at "shipped, in review".

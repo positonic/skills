@@ -1,0 +1,13 @@
+---
+"mattpocock-skills": minor
+---
+
+Teach the ship skills to wait for an automated review, apply its findings, and only then merge.
+
+**`ship-this`** picked exactly one reviewer — CodeRabbit — and fell back to a local `/pr-review` when it wasn't usable. It now probes for three, in preference order: **PR-Agent** (Qodo), **CodeRabbit**, then `/pr-review`. Detection is by what the repo actually has — `.pr_agent.toml` or a workflow using `qodo-ai/pr-agent`, a `.coderabbit.yaml`, or past reviewer activity on recent PRs. Where both CI reviewers are configured, PR-Agent wins: it's repo-owned CI, so "has the review finished?" has a definite answer, whereas a silent CodeRabbit is indistinguishable from a rate-limited one.
+
+The new PR-Agent path carries the detail that makes the loop actually work. **Completion is not "a new comment appeared."** Under `persistent_comment = true` PR-Agent *edits its Reviewer Guide comment in place*, so comment counts and timestamps never move and a naive check reads the previous push's review — fixing findings that no longer apply. The reliable gate is the PR-Agent **workflow run for the current head SHA concluding**, with the Code Suggestions comment's HTML SHA stamp (`<!-- 275120e -->`) used to confirm the suggestions describe current code rather than to decide whether to proceed — a clean review may post no suggestions comment at all, and waiting on one hangs forever. Both waits, plus the CI wait in step 8, are specified as **background** jobs so the agent is re-invoked on completion instead of burning a foreground tool call on a poll loop that outlives its timeout. Findings are applied with judgement, not wholesale: `auto_improve` emits a fixed `num_code_suggestions` whether or not that many things deserve changing, so filler is expected and skipped items get reported.
+
+**`ship-ticket`** had no review step at all — it stopped at "PR open, Ticket → `QA`". It now runs the same loop (step 8), delegating to `ship-this` step 7 rather than duplicating it, with two Ticket-specific notes: in stack mode the reviewer sees other Tickets' commits, and fix commits don't need Ticket trailers. The loop runs *after* the Ticket is linked and moved to `QA`, so a hung reviewer can't strand a Ticket in `IN_PROGRESS`.
+
+It also gains an opt-in **`--merge`** (step 9) and `--no-review`. Merging stays off by default: **Ship** and **merge** remain distinct events in the glossary — shipping puts work in review, merging puts it on the Trunk — and `QA → DONE` is still the merge hook's job, never a hand-written transition. Merging a *stacked* PR under `--merge` prompts for confirmation first, since it lands every Ticket on that PR, not just the one being shipped.

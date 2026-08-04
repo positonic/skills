@@ -56,7 +56,7 @@ Work one ticket at a time, in dependency order, each in a **fresh session** (pas
 | Need facts before deciding (docs, APIs, specs) | `/research` — background agent reads primary sources, leaves a cited markdown file; you keep working |
 | Unsure whether a design/state model feels right | `/prototype` — throwaway code that answers the question |
 | Raw reports piling up in the tracker | `/triage` — verifies claims and routes each to `READY_TO_PLAN` / `BLOCKED` / `NEEDS_REFINEMENT` / `ARCHIVED` |
-| One-off change, no ticket ceremony | `/ship-this` — commit → PR → CodeRabbit loop → CI → squash-merge |
+| One-off change, no ticket ceremony | `/ship-this` — commit → PR → automated review + autofix loop → CI → squash-merge |
 | Repo getting muddy | `/improve-codebase-architecture` — run weekly-ish |
 | Quick design stress-test, no repo/artifacts | `/grill-me` (see FAQ for how it differs from `/grill-with-docs`) |
 | Lost? | `/ask-matt` — describe your situation; it names the skill |

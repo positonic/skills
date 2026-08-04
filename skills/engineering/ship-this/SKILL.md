@@ -1,6 +1,6 @@
 ---
 name: ship-this
-description: Ship the current working copy end-to-end with zero hand-holding. Branches if needed, commits, pushes, opens a PR against the right base (from `docs/agents/git-flow.md`, or `main` if absent), runs a CodeRabbit review + autofix loop, waits for CI, and squash-merges. Use when ad-hoc changes are ready and the user says "ship it" / "/ship-this".
+description: Ship the current working copy end-to-end with zero hand-holding. Branches if needed, commits, pushes, opens a PR against the right base (from `docs/agents/git-flow.md`, or `main` if absent), waits for whichever automated reviewer the repo has (PR-Agent, CodeRabbit, or a local `/pr-review`), applies the findings, waits for CI, and squash-merges. Use when ad-hoc changes are ready and the user says "ship it" / "/ship-this".
 ---
 
 # Ship This
@@ -14,7 +14,7 @@ Take whatever is in the working copy and get it merged, end-to-end. This is the 
 ```
 
 - `--no-merge`: stop at PR-ready. Don't auto-merge.
-- `--no-review`: skip the CodeRabbit review + autofix loop.
+- `--no-review`: skip the review + autofix loop.
 - `--skip-checks`: bypass pre-ship checks. PR opens as **draft**, auto-merge disabled.
 - `--base <branch>`: override the base branch resolved from `docs/agents/git-flow.md`.
 
@@ -143,28 +143,76 @@ Skip this section entirely if `--no-review` or `--skip-checks` was passed.
 
 #### 7a. Pick a reviewer
 
-Try CodeRabbit first; fall back to `/pr-review` if it's not usable here. CodeRabbit is great when it's set up and has credits, but it's a paid GitHub App with rate limits and not every repo has it.
+Three candidates, in preference order: **PR-Agent**, **CodeRabbit**, then a local **`/pr-review`**. The first two run in the repo's own CI and comment on the PR; `/pr-review` runs on your machine and reports only to the agent.
 
-**Probe for CodeRabbit, in this order — first hit decides:**
+**Probe the repo — first hit decides:**
 
-1. **Skill loaded?** If `coderabbit-code-review` isn't in the available-skills list this session, skip CodeRabbit. Fall back.
-2. **Config file present?** If `.coderabbit.yaml`, `.coderabbit.yml`, or `coderabbit.yaml` exists at the repo root, treat that as intentional opt-in — use CodeRabbit.
-3. **Past activity on the repo?** Otherwise, check for prior CodeRabbit reviews:
+1. **PR-Agent configured?** A `.pr_agent.toml` at the repo root, or any workflow that uses the action:
    ```bash
-   gh api "repos/{owner}/{repo}/pulls?state=all&per_page=20" \
-     --jq '[.[].user.login] + [.[].requested_reviewers[]?.login // empty]' \
-     2>/dev/null | grep -q 'coderabbitai'
+   test -f .pr_agent.toml && echo pr-agent
+   grep -rl 'qodo-ai/pr-agent' .github/workflows/ 2>/dev/null
    ```
-   Or:
+   Either hit → PR-Agent (7b).
+2. **CodeRabbit configured?** `.coderabbit.yaml`, `.coderabbit.yml`, or `coderabbit.yaml` at the repo root — treat as intentional opt-in. Requires `coderabbit-code-review` to be in the available-skills list this session; if it isn't, skip to 3. Hit → CodeRabbit (7c).
+3. **Past activity on the repo?** Check who has reviewed recent PRs:
    ```bash
    gh pr list --state all --limit 20 --json comments \
-     --jq '[.[].comments[]?.author.login] | map(select(. == "coderabbitai")) | length' \
+     --jq '[.[].comments[]?.author.login] | group_by(.) | map({login: .[0], n: length})' \
      2>/dev/null
    ```
-   Non-zero hit → use CodeRabbit. Zero → fall back.
-4. **Tied:** if you can't decide, ask the user once via `AskUserQuestion`: *"Use CodeRabbit for this review, or fall back to /pr-review?"* Don't ask on every invocation — only when the heuristic is ambiguous.
+   `coderabbitai` present → CodeRabbit. `github-actions` present *and* a PR-Agent workflow exists → PR-Agent. Neither → 4.
+4. **Nothing configured** → `/pr-review` (7d).
 
-#### 7b. CodeRabbit path
+If both PR-Agent and CodeRabbit are set up, prefer **PR-Agent**: it's repo-owned CI, so "has the review finished?" has a definite answer (a workflow run either concluded or it didn't). CodeRabbit is a third-party App whose only signal is comment activity, and it's rate-limited on paid plans — a silent CodeRabbit is indistinguishable from a slow one.
+
+#### 7b. PR-Agent path
+
+PR-Agent (Qodo) reviews on every push to the PR and posts as `github-actions` — a **Reviewer Guide** comment (findings) and, when `auto_improve` is on, a **Code Suggestions** comment.
+
+**Do not detect completion by "a new comment appeared."** Under `persistent_comment = true` — the usual config — PR-Agent *edits its existing* Reviewer Guide comment in place. Comment count and creation timestamps never move, so a naive check reads the *previous* push's review and has you fixing findings that no longer apply.
+
+Two signals that are actually reliable, both anchored to the head SHA:
+
+- **The PR-Agent workflow run for the current head SHA has concluded.** This is the gate. It fires whether or not the review found anything.
+- **The Code Suggestions comment carries the reviewed commit** as an HTML stamp — `<!-- 275120e -->`, the short head SHA. Use this to confirm the suggestions you're reading describe the current code, *not* to decide whether to proceed: a clean review may post no suggestions comment at all, and waiting on one would hang forever.
+
+**Wait without burning context.** Run the poll as a **background** Bash job (`run_in_background: true`) with a command that exits when the run concludes. The harness re-invokes you on exit, so you never sit in a polling loop:
+
+```bash
+PR=<pr-number>
+WF=$(grep -rl 'qodo-ai/pr-agent' .github/workflows/ | head -1 | xargs -r basename)
+[ -n "$WF" ] || { echo "no PR-Agent workflow in this repo"; exit 1; }
+SHA=$(gh pr view "$PR" --json headRefOid --jq .headRefOid)
+for _ in $(seq 60); do
+  s=$(gh run list -w "$WF" -c "$SHA" --json status,conclusion \
+        --jq '.[0] | "\(.status) \(.conclusion)"' 2>/dev/null)
+  case "$s" in
+    "completed "*) echo "review finished for $SHA: $s"; exit 0 ;;
+  esac
+  sleep 15
+done
+echo "timed out after 15m waiting for $WF on $SHA"; exit 1
+```
+
+Exit 0 → the review is in. Exit 1 (timeout) → treat PR-Agent as unavailable, fall back to `/pr-review` for this round, and don't re-arm the wait.
+
+Then, up to **two rounds** of review → fix → push:
+
+1. Wait, as above.
+2. Read what it posted. Filter by the comment headings, not just the author — `github-actions` is every workflow in the repo, and on a busy repo most of its comments aren't the review:
+   ```bash
+   gh pr view "$PR" --json comments \
+     --jq '.comments[] | select(.author.login=="github-actions")
+           | select(.body | test("PR Reviewer Guide|PR Code Suggestions")) | .body'
+   ```
+   Check the Code Suggestions stamp against the current head SHA and ignore the block if it's stale.
+3. **Apply with judgement, not wholesale.** The Reviewer Guide's findings — especially anything under tests or security — are worth acting on. The Code Suggestions are advisory and generated *to a fixed count* (`num_code_suggestions`, commonly 4): PR-Agent emits that many whether or not four things deserve changing, so expect filler. Take what's real, skip what isn't, and say which you skipped and why in your step-10 report.
+4. Commit per finding (`fix: <one-line>`) and `git push`.
+5. No commits produced → exit the loop.
+
+Pushing fixes re-triggers PR-Agent on a new head SHA, which is exactly what round two waits on — re-read `headRefOid` each round rather than reusing the old value. Two rounds is the cap: if the reviewer is still finding new problems after two passes, something deeper is wrong and human eyes are warranted.
+
+#### 7c. CodeRabbit path
 
 Up to **two rounds** of review → fix → push. The cap is intentional — if CodeRabbit keeps finding new issues after two passes, something deeper is wrong and human eyes are warranted.
 
@@ -186,7 +234,7 @@ For each round:
    ```
 5. If autofix produced no commits (no findings, or findings non-actionable), exit the loop.
 
-#### 7c. `/pr-review` fallback path
+#### 7d. `/pr-review` fallback path
 
 `/pr-review` runs locally and produces a findings report to the agent — it doesn't post comments to the PR. So:
 
@@ -202,6 +250,8 @@ If `pr-review` is also unavailable, warn the user and continue to step 8 with no
 ```bash
 gh pr checks --watch --fail-fast
 ```
+
+Run this as a **background** Bash job too (`run_in_background: true`). CI on a real repo outlasts a foreground tool call, and `--watch` blocks until it's done; backgrounding it means the harness re-invokes you when checks settle instead of the call timing out mid-run.
 
 - All green → continue to merge.
 - Any check red → surface the failing check name + log link, stop. Don't merge.
@@ -242,6 +292,8 @@ Print:
 - **Push rejected** — remote has divergent history. Stop. The user resolves manually; this skill doesn't force-push or rebase silently.
 - **PR exists in draft** — leave draft state alone; don't promote it. The user can `gh pr ready` themselves.
 - **CodeRabbit unavailable or out of credits** — fall back to `/pr-review` automatically (see step 7a). If `/pr-review` is also unavailable, warn and continue.
+- **PR-Agent workflow never concludes** — the 15-minute wait exits non-zero. Fall back to `/pr-review` for that round; don't re-arm the wait. A workflow that fails outright (`completed failure`) still satisfies the gate — read whatever it posted, and mention the failed run in the report.
+- **PR-Agent review is stale** — the Code Suggestions stamp doesn't match `headRefOid`. Something pushed after the review started. Ignore the stale block and re-wait on the new SHA (this consumes one of the two rounds).
 - **CI red** — don't merge. Surface the failing check.
 - **Required reviewers not satisfied** — enable auto-merge instead of merging directly. Tell the user.
 - **`docs/agents/git-flow.md` missing** — warn, default to the repo's default branch, recommend `/setup-git-flow`.
