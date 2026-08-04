@@ -58,6 +58,7 @@ Work one ticket at a time, in dependency order, each in a **fresh session** (pas
 | Raw reports piling up in the tracker | `/triage` — verifies claims and routes each to `READY_TO_PLAN` / `BLOCKED` / `NEEDS_REFINEMENT` / `ARCHIVED` |
 | One-off change, no ticket ceremony | `/ship-this` — commit → PR → automated review + autofix loop → CI → squash-merge |
 | Repo getting muddy | `/improve-codebase-architecture` — run weekly-ish |
+| `QA` filling up, or stale worktrees piling on disk | `/close-shipped` — removes merged worktrees and promotes `QA` → `DONE`, gated on the PR actually having merged |
 | Quick design stress-test, no repo/artifacts | `/grill-me` (see FAQ for how it differs from `/grill-with-docs`) |
 | Lost? | `/ask-matt` — describe your situation; it names the skill |
 
@@ -149,7 +150,7 @@ After this, every other skill "just works" against our Exponential product.
 /setup-merge-hook
 ```
 
-It sets an `EXPONENTIAL_TOKEN` repo secret and scaffolds `.github/workflows/exponential-promote.yml` (review, commit, push to activate). The Action handles direct PRs and rollup PRs transparently. Without it, tickets stay in `QA` after `/ship-ticket` and you flip them to `DONE` by hand.
+It sets an `EXPONENTIAL_TOKEN` repo secret and scaffolds `.github/workflows/exponential-promote.yml` (review, commit, push to activate). The Action handles direct PRs and rollup PRs transparently. Without it, tickets stay in `QA` after `/ship-ticket` — run `/close-shipped` to sweep them (it checks each ticket's PR actually merged before promoting), or flip them by hand.
 
 ## Install modes: which to pick
 
@@ -175,6 +176,8 @@ Once `/setup-syntro-skills` and `/setup-merge-hook` are wired, every state trans
 | `/start-ticket EXPO-N` | `IN_PROGRESS` |
 | `/ship-ticket` opens the PR | `QA` |
 | PR merges to your deploy trigger | `DONE` (auto, via GitHub Action) |
+
+Where the Action isn't wired, `/close-shipped` does that last row on demand — a sweep over `QA` that promotes only the tickets whose PR GitHub confirms as merged, and clears out the worktrees those branches left behind.
 
 The commit, the PR, and the ticket are linked three ways: `ticket.branchName` ↔ git branch, `ticket.prUrl` ↔ GitHub PR, and an `Exponential-Ticket: <cuid>` trailer on the commit `/ship-ticket` creates. The GitHub Action uses `ticket.prUrl` as the source of truth when promoting to `DONE`; the commit trailer is decoration for human `git log` readers.
 
