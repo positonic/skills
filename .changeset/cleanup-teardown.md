@@ -1,0 +1,21 @@
+---
+"mattpocock-skills": minor
+---
+
+Add the **`cleanup`** skill — the teardown at the end of a session. It removes the git worktree the work happened in, deletes its branch, promotes that work's Exponential Tickets from `QA` to `DONE`, and closes with an **all-clear**: an explicit statement of whether anything is still in flight, and therefore whether the tab can be closed.
+
+The gap is real and specific. `/ship-this` and `/ship-ticket` end with a PR merged and nothing else cleared: the worktree is still on disk, the branch is still local, and the Ticket is still in `QA`. `/setup-merge-hook` scaffolds a GitHub Action that handles the Ticket half, but only for repos where it's been wired, and never for the worktrees. Where it hasn't, `QA` becomes a graveyard and `git worktree list` grows past the work actually in flight — and nothing ever tells you a session is finished.
+
+**Two modes, picked from where you are.** With no flags it runs **here mode**: the worktree you're standing in, and the Tickets belonging to its branch (resolved from the `.exponential/current-ticket` marker, `tickets list --branch`, and `tickets list --pr`, unioned). With `--all` it runs the repo-wide **sweep mode** from the primary checkout. Here mode never removes the worktree it is running inside — git refuses, and forcing it from a parent directory pulls the ground out from under the live session — so it prints the one `cd <primary> && git worktree remove … && git branch -d …` line and says in the all-clear that this is the one thing left.
+
+**Every action is gated on evidence that the work merged**, which is the whole design. Merge state is read from `gh pr view`, not inferred from a branch looking stale or a Ticket looking done. A `QA` Ticket with no `prUrl` is skipped and reported; one whose PR is `OPEN` stays in `QA`; one whose PR was `CLOSED` without merging is flagged loudly, since that's usually abandoned work filed in the wrong column. `DONE`, never `ARCHIVED` — `ARCHIVED` is triage's `wontfix`, and using it here would misfile shipped work as abandoned.
+
+**The all-clear is a claim about evidence, not about the run finishing without errors.** It is given only when the PR is `MERGED`, the tree is clean, nothing is unpushed, every Ticket found is `DONE`, and the worktree is gone or its removal command is the only remaining step. Anything short of that prints the outstanding list instead, each item paired with what would clear it. A `--dry-run` never gives it, and neither does a `--tickets-only` / `--worktrees-only` run.
+
+Worktrees sort into four buckets in sweep mode, and only two are acted on unasked: **prunable** (git already lost the directory) and **landed and clean** get removed; **landed but dirty or with unpushed commits** stops and asks per worktree, showing the actual `git status` output, because `--force` discards that work permanently; **still active** is left alone. The report leads with what was *not* touched — that list is the one needing a human.
+
+Two traps are called out in the skill because both silently corrupt a naive sweep. `git status --porcelain` excludes gitignored files, so `dist/` and `node_modules/` don't make a worktree dirty but a modified tracked file does. And `git branch --merged` does not list **squash-merged** branches — a squash creates a new commit — so a sweep built on `--merged` alone classifies most modern PRs as unmerged; the PR lookup is primary here and `--merged` only the fallback for branches that never had a PR.
+
+**Wired into the shipping skills.** `/ship-this` gains a step 11 and `/ship-ticket` a step 12, each handing off to `/cleanup` — but only when the final state is actually `merged`. Neither writes the verdict itself; `/cleanup` owns it, because it's only trustworthy derived from evidence that skill gathers. `/ship-ticket`'s default (no `--merge`) does the opposite and states plainly that the work is *in review, not done*, so a shipped-but-unmerged Ticket never reads as finished.
+
+User-invoked (`disable-model-invocation: true`), since removing worktrees and rewriting tracker state shouldn't happen unprompted. Routed in `ask-matt` under Codebase health, listed in the top-level and Engineering READMEs, added to `.claude-plugin/plugin.json`, and wired into `EXPONENTIAL-TEAM.md` at the places that previously said tickets stay in `QA` and you flip them by hand.

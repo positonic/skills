@@ -11,7 +11,7 @@ Reachable only when you type them (Claude Code: `disable-model-invocation: true`
 - **[triage](./triage/SKILL.md)** — Move issues through a state machine of triage roles.
 - **[improve-codebase-architecture](./improve-codebase-architecture/SKILL.md)** — Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.
 - **[setup-syntro-skills](./setup-syntro-skills/SKILL.md)** — Configure this repo for the engineering skills (issue tracker, triage labels, domain doc layout). Run once per repo.
-- **[close-shipped](./close-shipped/SKILL.md)** — Sweep up after work that landed: remove the worktrees whose branches merged, and promote Exponential Tickets from `QA` to `DONE` once their PR is confirmed merged.
+- **[cleanup](./cleanup/SKILL.md)** — Tear down after work that landed: remove the worktree, delete its branch, promote its Exponential Tickets from `QA` to `DONE`, and end with the all-clear on whether anything is still in flight. `--all` sweeps the whole repo.
 - **[to-prd](./to-prd/SKILL.md)** — Turn the current conversation into the human PRD: a page linked to a Feature in Exponential, with EARS requirements as native rows.
 - **[to-robo-prd](./to-robo-prd/SKILL.md)** — Append the Agent PRD (implementation detail, scope map, tracer bullets) to the bottom of a feature's PRD page.
 - **[to-tickets](./to-tickets/SKILL.md)** — Turn a feature's Agent PRD into few tickets (default one per scope) with the vertical-slice steps as ordered actions.
