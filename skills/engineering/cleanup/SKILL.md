@@ -1,7 +1,6 @@
 ---
 name: cleanup
-description: Tear down after work that has landed — remove the git worktree, delete its branch, promote its Exponential Tickets from `QA` to `DONE`, and give a straight answer on whether anything is still in flight. Defaults to the worktree you're standing in; `--all` sweeps the whole repo.
-disable-model-invocation: true
+description: Tear down after work that has landed — remove the git worktree, delete its branch, promote its Exponential Tickets from `QA` to `DONE`, and give a straight answer on whether anything is still in flight. Defaults to the worktree you're standing in; `--all` sweeps the whole repo. Use when the user says "clean up" / "/cleanup", when a session's work has merged and the worktree or Ticket is still hanging around, or when `/ship-this` or `/ship-ticket` reaches its hand-off step after a real merge.
 ---
 
 # Cleanup

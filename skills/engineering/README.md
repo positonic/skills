@@ -11,7 +11,6 @@ Reachable only when you type them (Claude Code: `disable-model-invocation: true`
 - **[triage](./triage/SKILL.md)** — Move issues through a state machine of triage roles.
 - **[improve-codebase-architecture](./improve-codebase-architecture/SKILL.md)** — Scan a codebase for deepening opportunities, present them as a visual HTML report, then grill through whichever one you pick.
 - **[setup-syntro-skills](./setup-syntro-skills/SKILL.md)** — Configure this repo for the engineering skills (issue tracker, triage labels, domain doc layout). Run once per repo.
-- **[cleanup](./cleanup/SKILL.md)** — Tear down after work that landed: remove the worktree, delete its branch, promote its Exponential Tickets from `QA` to `DONE`, and end with the all-clear on whether anything is still in flight. `--all` sweeps the whole repo.
 - **[to-prd](./to-prd/SKILL.md)** — Turn the current conversation into the human PRD: a page linked to a Feature in Exponential, with EARS requirements as native rows.
 - **[to-robo-prd](./to-robo-prd/SKILL.md)** — Append the Agent PRD (implementation detail, scope map, tracer bullets) to the bottom of a feature's PRD page.
 - **[to-tickets](./to-tickets/SKILL.md)** — Turn a feature's Agent PRD into few tickets (default one per scope) with the vertical-slice steps as ordered actions.
@@ -33,6 +32,7 @@ Model- or user-reachable (rich trigger phrasing so the model can reach for them)
 - **[start-ticket](./start-ticket/SKILL.md)** — Start work on an Exponential Ticket: fetch it, transition to `IN_PROGRESS`, check out (or create) its branch, and write the `.exponential/current-ticket` marker.
 - **[ship-ticket](./ship-ticket/SKILL.md)** — Ship one Exponential Ticket: commit leftovers, run pre-ship checks, open or extend a PR, link it back to the Ticket, transition to `QA`, then run the review + autofix loop. Merges only with `--merge`.
 - **[ship-this](./ship-this/SKILL.md)** — Ship the current working copy end-to-end with zero hand-holding: branch if needed, commit, push, open a PR, wait for the repo's automated reviewer (PR-Agent, CodeRabbit, or local `/pr-review`) and apply its findings, wait for CI, and squash-merge.
+- **[cleanup](./cleanup/SKILL.md)** — Tear down after work that landed: remove the worktree, delete its branch, promote its Exponential Tickets from `QA` to `DONE`, and end with the all-clear on whether anything is still in flight. `/ship-this` and `/ship-ticket` hand off to it once a merge is real; `--all` sweeps the whole repo.
 - **[setup-git-flow](./setup-git-flow/SKILL.md)** — Detect this repo's branching model and persist the resulting Promotion chain to `docs/agents/git-flow.md`.
 - **[setup-merge-hook](./setup-merge-hook/SKILL.md)** — Scaffold the GitHub Action that auto-promotes Exponential Tickets to `DONE` on merge to the deploy trigger.
 - **[code-review](./code-review/SKILL.md)** — Two-axis review of the diff since a fixed point: **Standards** (does it follow the repo's coding standards, plus a Fowler smell baseline?) and **Spec** (does it faithfully implement the originating issue/PRD?), run as parallel sub-agents.
