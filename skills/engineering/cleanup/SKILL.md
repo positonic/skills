@@ -51,10 +51,13 @@ If the toplevel *is* the primary checkout, there is no worktree to remove. Say s
 Three checks, all against evidence:
 
 ```bash
-git status --porcelain               # empty = clean
-git log --oneline @{u}.. 2>/dev/null # empty = nothing unpushed (no upstream ⇒ treat as unpushed)
+git status --porcelain                                  # empty = clean
+git rev-parse --abbrev-ref --symbolic-full-name @{u}    # non-zero exit = NO upstream
+git log --oneline @{u}..                                # only meaningful once the above succeeded
 gh pr list --head <branch> --state merged --json number,url,mergedAt
 ```
+
+> Check for the upstream **first, as its own command**, and never silence it with `2>/dev/null`. A branch with no upstream makes `git log @{u}..` print nothing and exit 0 once its error is swallowed — identical to a fully-pushed branch. Read that way, a branch whose commits exist nowhere but this disk classifies as clean and gets its worktree removed. **No upstream is the strongest possible "unpushed" signal, not the absence of one.**
 
 > `git status --porcelain` **excludes gitignored files**, so `dist/`, `node_modules/`, and build output do not make a worktree dirty. What does show up is real: a modified tracked file, or an untracked source file. Treat any non-empty output as work that might not exist anywhere else.
 
@@ -101,7 +104,7 @@ For each worktree **other than the primary**, collect:
 | --- | --- |
 | Path, branch | `git worktree list --porcelain` |
 | Dirty? | `git -C <path> status --porcelain` — **non-empty means real work**, see the note above |
-| Unpushed? | `git -C <path> log --oneline @{u}.. 2>/dev/null` (no upstream ⇒ treat as unpushed) |
+| Unpushed? | `git -C <path> rev-parse --abbrev-ref --symbolic-full-name @{u}` first — non-zero exit means **no upstream**, which counts as unpushed. Only then `git -C <path> log --oneline @{u}..`. See the trap noted in here mode: swallowing the upstream error makes a never-pushed branch read as fully pushed |
 | Merged? | `gh pr list --head <branch> --state merged --json number,url` — falls back to `git branch --merged <base>` when the branch never had a PR |
 
 ### 2. Classify each worktree
