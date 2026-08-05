@@ -50,6 +50,7 @@ A starting situation that generates work, then merges onto the main flow.
 Not feature work — upkeep.
 
 - **`/improve-codebase-architecture`** — run whenever you have a spare moment to keep the codebase good for agents to operate in. It surfaces **deepening opportunities**; picking one _generates an idea_ you can take into the main flow at `/grill-with-docs`. It's the survey that finds the candidates; **`/codebase-design`** (below) is the bench you design the chosen one on.
+- **`/cleanup`** — upkeep of the *desk*, not the codebase, and the last step of a session. After work merges, its worktree stays on disk and its Ticket stays in `QA`; this tears down both, but only where GitHub confirms the PR actually merged. It ends with the **all-clear**: an explicit "nothing left in flight, close the tab" — or the list of what still wants you. What it declines to touch — a dirty worktree, a `QA` Ticket whose PR is still open — is the point. `/ship-this` and `/ship-ticket` hand off to it automatically once a merge is real; reach for it by hand when `QA` has become a graveyard, or with `--all` to sweep every stale worktree at once. Where a repo has `/setup-merge-hook` wired, the Ticket half happens on every merge and you only need this for the worktrees and the verdict.
 
 ## Vocabulary underneath
 

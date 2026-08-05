@@ -217,6 +217,12 @@ Print:
 - Final state: `in review` / `merged` / `auto-merge queued` / `merge blocked by <check>`
 - Reminder: once the PR merges into the **deploy trigger**, the Action scaffolded by `/setup-merge-hook` will auto-promote to `DONE`. If `/setup-merge-hook` hasn't been run, prompt the user.
 
+### 12. Hand off to `/cleanup`
+
+Only when the final state is `merged` — i.e. `--merge` was passed and it went through. Then run the `/cleanup` skill: it tears down the worktree (or hands back the one command to do it), confirms the Ticket reached `DONE` — promoting it if the merge hook didn't — and closes with the **all-clear**, the explicit statement of whether anything is still in flight and therefore whether this tab can be closed. Don't write that verdict here; `/cleanup` owns it, and it is only trustworthy because it derives from evidence that skill gathers itself.
+
+In the default no-`--merge` case, do the opposite: state plainly that the work is **in review, not done** — the Ticket sits in `QA`, the worktree stays, and the next step is the PR merging. Never leave a shipped-but-unmerged Ticket reading as finished.
+
 ## Failure modes
 
 - **Pre-ship check failure** — refuse to push. The user can fix and re-invoke or pass `--skip-checks`.
@@ -232,5 +238,6 @@ Print:
 
 - It does not unship a Ticket (no automatic `QA → IN_PROGRESS` rollback). Deferred.
 - It does not clean up abandoned PRs. Deferred.
+- It does not remove the worktree or delete the branch. That's `/cleanup`, invoked at step 12 once the merge is real.
 - It does not promote `QA → DONE` itself — that's the GitHub Action's job, scaffolded by `/setup-merge-hook`. This holds even under `--merge`.
 - It does not merge unless you pass `--merge`. Default behaviour stops at "shipped, in review".

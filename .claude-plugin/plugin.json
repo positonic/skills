@@ -28,6 +28,7 @@
     "./skills/engineering/setup-syntro-skills",
     "./skills/engineering/setup-merge-hook",
     "./skills/engineering/ship-this",
+    "./skills/engineering/cleanup",
     "./skills/engineering/ship-ticket",
     "./skills/engineering/start-ticket",
     "./skills/engineering/tdd",

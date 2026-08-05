@@ -286,6 +286,14 @@ Print:
 - Branch deletion status
 - Anything still pending the user's attention (required reviewers, failing checks)
 
+### 11. Hand off to `/cleanup`
+
+Only when the final state is `merged`. The PR is on the Trunk, but the worktree is still on disk and the branch is still local — and the user has no way of knowing whether anything else is outstanding without being told.
+
+Run the `/cleanup` skill. It tears down the worktree (or hands back the one command to do it), promotes any Exponential Tickets whose PR it can confirm merged, and closes with the **all-clear** — the explicit statement of whether anything is still in flight, and therefore whether this tab can be closed. Don't write that verdict here; `/cleanup` owns it, and it is only trustworthy because it is derived from evidence that skill gathers itself.
+
+On any other final state — `auto-merge queued`, `awaiting CI`, `draft` — skip this. The work hasn't landed, so there is nothing to clean up and no all-clear to give. Say what the user is waiting on instead.
+
 ## Failure modes
 
 - **Pre-ship check failure** — refuse to push. Fix and re-invoke, or `--skip-checks`.
@@ -301,6 +309,7 @@ Print:
 ## What this skill does NOT do
 
 - Link to an Exponential Ticket. Use [`/ship-ticket`](../ship-ticket/SKILL.md) for ticket-linked work.
+- Remove the worktree or delete the local branch. That's `/cleanup`, invoked at step 11 once the merge is real.
 - Force-push or rewrite history. Ever.
 - Run on non-GitHub remotes (GitLab/Bitbucket). GitHub Actions + `gh` only.
 - Choose between squash / merge-commit / rebase. Always squash-merges.
