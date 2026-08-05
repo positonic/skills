@@ -39,10 +39,11 @@ The common case: you just shipped, you're inside the worktree that did the work,
 
 ```bash
 git rev-parse --show-toplevel        # this worktree
-git rev-parse --git-common-dir       # <primary>/.git ⇒ the primary checkout is its parent
-git worktree list --porcelain        # the primary is listed first
+git worktree list --porcelain        # the primary checkout is the FIRST entry
 git branch --show-current
 ```
+
+`git worktree list` is the authority on which checkout is primary — take the first `worktree ` line and compare it to the toplevel. Don't derive it from `git rev-parse --git-common-dir`: that returns an absolute path inside a linked worktree but a bare relative `.git` in the primary checkout, so "the parent of the common dir" resolves to `.` in exactly the case you're trying to detect.
 
 If the toplevel *is* the primary checkout, there is no worktree to remove. Say so, run the Ticket half only, and offer `--all`.
 
@@ -174,8 +175,11 @@ Give the **all-clear** only when every one of these holds, each from evidence al
 
 Then say it plainly:
 
-> ✅ **All clear.** Nothing left in flight for this work — you can close this tab.
-> One command left: `cd <primary> && git worktree remove <path> && git branch -d <branch>`
+> ✅ **All clear.** The PR is merged, the Tickets are `DONE`, nothing is uncommitted or unpushed.
+> Run this, then you can close the tab:
+> `cd <primary> && git worktree remove <path> && git branch -d <branch>`
+
+In sweep mode, where the worktrees are already gone, drop the command line and end on "you can close this tab".
 
 If **any** item fails, do not print the all-clear. Print what's outstanding instead, each with the thing that would clear it:
 
