@@ -144,13 +144,24 @@ It also invokes `/setup-git-flow` as a sub-step: detects your repo's branching m
 
 After this, every other skill "just works" against our Exponential product.
 
-### 4. (Optional but recommended) Wire auto-promotion to `DONE` on merge
+### 4. (Optional but recommended) Wire the merge hook
+
+Run:
 
 ```
 /setup-merge-hook
 ```
 
-It sets an `EXPONENTIAL_TOKEN` repo secret and scaffolds `.github/workflows/exponential-promote.yml` (review, commit, push to activate). The Action handles direct PRs and rollup PRs transparently. Without it, tickets stay in `QA` after `/ship-ticket` — run `/cleanup` to sweep them (it checks each ticket's PR actually merged before promoting), or flip them by hand.
+It asks which of two things should happen when a PR merges to your trunk. They're independent — pick either, or both:
+
+- **promote** — tickets move `QA` → `DONE` automatically, no manual status updates after `/ship-ticket`. Scaffolds `.github/workflows/exponential-promote.yml`.
+- **requirements** — the merged ticket's scope has its feature requirements ticked **met**, and ticket status is left alone. Scaffolds `.github/workflows/exponential-requirements.yml`. Pick this (and not promote) if your repo keeps a human QA gate: you still get requirement coverage that tracks what actually shipped, without losing the gate.
+
+Either way the skill sets your Exponential JWT as a repo secret called `EXPONENTIAL_TOKEN` via `gh secret set`, and captures the API URL plus your product/workspace into the workflow. It does **not** commit — review the workflow file, then commit and push to activate. The Action handles direct PRs (feature → trunk) and rollup PRs (e.g. `develop → main`) transparently.
+
+Requirement ticking means "this shipped to trunk green", not "someone wrote it down". It assumes **one ticket = one scope = one PR**; if a scope ever spans several PRs, the first merge ticks the whole scope and over-claims. The generated workflow says so in its own comments.
+
+Without any of this, tickets stay in `QA` after `/ship-ticket` — run `/cleanup` to sweep them (it checks that each ticket's PR actually merged before promoting), or flip them to `DONE` by hand.
 
 ## Install modes: which to pick
 
@@ -180,6 +191,40 @@ Once `/setup-syntro-skills` and `/setup-merge-hook` are wired, every state trans
 Where the Action isn't wired, `/cleanup` does that last row on demand — it promotes only the tickets whose PR GitHub confirms as merged, and clears out the worktrees those branches left behind. `/ship-this` and `/ship-ticket --merge` hand off to it automatically once the merge is real, so the session ends with either "all clear, close the tab" or the list of what's still in flight.
 
 The commit, the PR, and the ticket are linked three ways: `ticket.branchName` ↔ git branch, `ticket.prUrl` ↔ GitHub PR, and an `Exponential-Ticket: <cuid>` trailer on the commit `/ship-ticket` creates. The GitHub Action uses `ticket.prUrl` as the source of truth when promoting to `DONE`; the commit trailer is decoration for human `git log` readers.
+
+## A suggested daily workflow
+
+A loop that uses the skills the way they were designed to compose. Adapt it.
+
+1. **Idea → aligned spec.** Don't start coding. Open a Claude session and run `/grill-with-docs`. It interviews you about the change and updates `CONTEXT.md` / ADRs inline. You leave with a sharper definition than you started with.
+
+2. **Spec → PRD in Exponential.** Run `/to-prd`. It checks whether the feature already exists in the registry (adding to it if so), then writes the human PRD as a Knowledge page linked to the feature, creates its scopes, and files the EARS requirements as native, checkable rows.
+
+3. **PRD → Agent PRD.** When agents will build it, run `/to-robo-prd`. It appends an `## Agent PRD` section to the bottom of the same page: implementation decisions, testing decisions, a scope map with tracer bullets, rejected alternatives.
+
+4. **Agent PRD → tickets.** Run `/to-tickets`. It cuts the work into FEW tickets - default one per scope - with the vertical-slice steps as ordered actions on each ticket (one branch, one PR, commit per action). The backlog stays readable; agents keep their detail. (`/to-expo` remains for plans that don't belong to a registry feature.)
+
+5. **Backlog → routed work.** Whenever new tickets land in `BACKLOG`, run `/triage`. It moves each to:
+   - `READY_TO_PLAN` if fully specified for an agent
+   - `BLOCKED` if it needs a human's judgement
+   - `NEEDS_REFINEMENT` (with a comment carrying the question) if more info is needed
+   - `ARCHIVED` if it won't be actioned
+
+6. **Start a ticket.** Pick one from the `READY_TO_PLAN` queue and run `/start-ticket EXPO-N`. It checks out the ticket's branch (creating if needed), moves the ticket to `IN_PROGRESS`, and drops `.exponential/current-ticket` so the next skill knows which ticket you're on.
+
+7. **Build.** `/tdd` for new functionality, `/diagnosing-bugs` for bugs.
+
+8. **Ship.** When the work is done, run `/ship-ticket` — no arguments needed. It auto-detects the ticket from the marker, runs your discovered test/type/lint commands (use `--skip-checks` for a draft PR if work is unfinished), creates an atomic commit with the right trailer, opens a PR against the base branch from your git-flow config, links `ticket.prUrl`, and moves the ticket to `QA`.
+
+   **Stacking**: if you want to bundle a tightly-coupled second ticket into the same PR, stay on the branch, run `/start-ticket EXPO-M`, do the work, then `/ship-ticket` again. The skill detects the open PR and appends to it; both tickets end up linked to the same PR URL.
+
+9. **Merge.** When the PR merges to your trunk, the GitHub Action scaffolded by `/setup-merge-hook` finds the linked ticket(s) — directly or by walking rollup-PR commit messages for child PR refs — and, depending on the mode you chose, moves them to `DONE` and/or ticks their scope's feature requirements as met. You don't touch the ticket again.
+
+10. **Close the session.** Run `/cleanup`. It removes the worktree the work happened in, promotes any ticket the Action didn't (checking each PR actually merged first), and ends with a straight answer: everything's landed and you can close the window, or here's the list of what's still in flight. `/ship-this` and `/ship-ticket --merge` hand off to it automatically, so most of the time you won't type it.
+
+11. **Maintain the design.** Once a week-ish, run `/improve-codebase-architecture` on the repo. It surfaces refactors grounded in our domain language.
+
+The skills are designed to be invoked at the moment you'd already pause to think. They don't replace the pause — they structure it.
 
 ## When you install these into a product repo
 
