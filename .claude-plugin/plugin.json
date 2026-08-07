@@ -32,6 +32,7 @@
     "./skills/engineering/ship-ticket",
     "./skills/engineering/start-ticket",
     "./skills/engineering/tdd",
+    "./skills/engineering/to-bug",
     "./skills/engineering/to-expo",
     "./skills/engineering/to-prd",
     "./skills/engineering/to-robo-prd",

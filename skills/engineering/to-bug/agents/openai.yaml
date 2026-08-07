@@ -1,0 +1,3 @@
+interface:
+  display_name: "To Bug"
+  short_description: "File one defect as a BUG ticket in Exponential"
