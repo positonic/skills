@@ -1,5 +1,5 @@
 ---
-"mattpocock-skills": minor
+"syntro-skills": minor
 ---
 
 Add the **`cleanup`** skill — the teardown at the end of a session. It removes the git worktree the work happened in, deletes its branch, promotes that work's Exponential Tickets from `QA` to `DONE`, and closes with an **all-clear**: an explicit statement of whether anything is still in flight, and therefore whether the tab can be closed.
