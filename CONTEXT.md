@@ -25,7 +25,7 @@ The Exponential-specific manifestation of an **Issue**. Tickets carry additional
 Picking up a `READY_TO_PLAN` **Ticket** and beginning `IN_PROGRESS` work — checking out the branch, writing the `.exponential/current-ticket` marker. Emitted by `/start-ticket`. The front-end bookend to `/ship-ticket`.
 
 **Ship** (verb):
-Opening a pull request for a **Ticket**, transitioning it to `QA`, and linking the PR back via `ticket.prUrl`. Emitted by `/ship-ticket`. Distinct from "merge" — shipping puts the work *in review*; merging puts it on the **Trunk**.
+Opening a pull request for a **Ticket**, transitioning it to `QA`, and linking the PR back via `ticket.prUrl`. Emitted by `/ship-ticket`. Distinct from "merge" — shipping puts the work *in review*; merging puts it on the **Trunk**. `/ship-ticket --merge` collapses the two in one invocation, but they remain separate events: the `QA → DONE` promotion still comes from the merge hook, not from shipping.
 _Avoid_: complete, submit, deliver (when referring to PR opening specifically)
 
 **Stack** (verb):

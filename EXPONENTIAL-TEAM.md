@@ -1,8 +1,8 @@
 # Skills For The Exponential Team
 
-The single onboarding doc for engineers on the Exponential team. Read this end-to-end once; you shouldn't need to read the upstream `README.md` to get going.
+**This is the canonical doc for how we work with agent skills.** Read it end-to-end once; afterwards it's a reference. If anything here disagrees with another doc (including the upstream `README.md` or the vendored `docs/` pages), this doc wins — fix the other one.
 
-This is our fork of [mattpocock/skills](https://github.com/mattpocock/skills) with one substantive addition: an Exponential issue-tracker preset and a published `/to-expo` skill, so the whole workflow is plumbed end-to-end into our tracker without manual config.
+This is our fork of [mattpocock/skills](https://github.com/mattpocock/skills), rebuilt around [Exponential](https://www.exponential.im) as the tracker: two-zone PRDs, one-ticket-per-scope backlogs, and a git lifecycle that drives ticket status automatically.
 
 ## Why use this
 
@@ -10,37 +10,80 @@ Coding agents fail in predictable ways. They build the wrong thing, drown you in
 
 - **Misalignment** → `/grill-with-docs` interviews you until you and the agent agree on what's being built
 - **Verbosity** → grounding in a project-specific `CONTEXT.md` cuts both prose and code bloat
-- **Broken code** → `/tdd` and `/diagnosing-bugs` enforce real feedback loops
-- **Architectural drift** → `/improve-codebase-architecture` keeps the design intentional
+- **Broken code** → `/tdd`, `/implement`, and `/diagnosing-bugs` enforce real feedback loops
+- **Architectural drift** → `/code-review` and `/improve-codebase-architecture` keep the design intentional
 
 The skills are small, composable, and model-agnostic. They don't replace your judgement; they structure it.
 
-## The skills you'll use most
+## The workflow
 
-| Skill | When to reach for it |
+### Step 0 — size the effort
+
+Ask one question: **could I settle every open question about this in a single sitting?**
+
+- **Yes → start at `/grill-with-docs`.** This is the default, ~90% of the time — a feature, a refactor, a change with a handful of open questions. Grill is a *conversation*.
+- **No → start at `/wayfinder`.** The signal is **fog**: you can feel the shape of the effort but couldn't write the spec yet, because too many decisions depend on decisions you haven't made — greenfield products, huge multi-feature builds. Wayfinder is a *campaign*: it charts a shared map of decision tickets on Exponential (map = a Feature, children = tickets with native blocking) that you and teammates burn down across days. When the fog clears, it hands off to the normal flow below.
+
+Both directions self-correct: `/wayfinder` stops early if its opening questions surface no fog ("this fits one session — skip the map"), and a grilling session that's drowning in multiplying questions is your cue to escalate to wayfinder.
+
+### Steps 1–3 — plan (one unbroken session)
+
+Keep these in **one session, without clearing context** — the tickets should inherit the thinking.
+
+1. **`/grill-with-docs`** — the agent interviews you one question at a time, challenges your terms against `CONTEXT.md` and the ADRs, and updates them as decisions crystallise. It won't proceed until you confirm shared understanding.
+2. **`/to-prd`** — turns the settled conversation into the **human PRD**: a Knowledge page linked to an Exponential Feature (checking the registry first so it extends rather than duplicates), with scopes and EARS requirements as native, checkable rows.
+3. **`/to-robo-prd`** then **`/to-tickets`** — appends the **Agent PRD** (implementation decisions, testing decisions, scope map with tracer bullets, rejected alternatives) to the same page, then cuts the work into **few tickets** — default one per scope — with the vertical slices as **ordered actions** on each ticket. One ticket = one branch = one PR; one action = one commit. Branch names are pre-assigned, blocking edges wired, and it ends by printing a clean-context execution prompt.
+
+*(A loose plan that doesn't belong to a registry feature? Use `/to-expo` instead of steps 2–3.)*
+
+### Step 4 — execute (fresh session per ticket)
+
+Work one ticket at a time, in dependency order, each in a **fresh session** (paste the execution prompt from `/to-tickets`):
+
+1. **`/start-ticket EXPO-N`** — fetches the ticket, moves it to `IN_PROGRESS`, checks out its branch, writes the `.exponential/current-ticket` marker.
+2. **Build the actions in numbered order, one commit per action.** Use **`/implement`** — it drives `/tdd` red-green at the seams agreed in the PRD, then closes out with `/code-review` before committing. After every action the branch must be demoable. Mark each action done: `exponential actions update --id <id> --status COMPLETED`.
+3. **`/ship-ticket`** — runs your test/type/lint suite, commits leftovers with the right trailers, opens a PR against the base from your git-flow config, links `ticket.prUrl`, moves the ticket to `QA`.
+4. **Merge the PR before starting any ticket that depends on it.** Independent tickets can run in parallel. On merge to the deploy trigger, the merge hook flips the ticket to `DONE` — you never touch its status by hand.
+
+**Stacking** (exception, for tightly-coupled tickets that shouldn't be reviewed separately): stay on the branch, `/start-ticket` the next ticket, work it, `/ship-ticket` again — it appends to the same PR.
+
+### Situational skills — reach for when needed
+
+| Situation | Command |
 |---|---|
-| `/grill-with-docs` | Anytime you're starting a non-trivial change. The agent grills you, updates `CONTEXT.md` and ADRs as decisions crystallise. |
-| `/to-prd` | Turn a settled conversation into the human PRD: a Knowledge page linked to a Feature, with EARS requirements as native rows. |
-| `/to-robo-prd` | Append the Agent PRD (implementation detail, scope map, tracer bullets) to the bottom of the feature's PRD page. |
-| `/to-tickets` | Turn the Agent PRD into few tickets (default one per scope) with the vertical-slice steps as ordered actions. Each ticket gets an auto-assigned `branchName`. |
-| `/to-expo` | Break a loose plan (no registry feature) into independently-grabbable tickets using vertical slices. For feature work, prefer `/to-tickets`. |
-| `/triage` | Sort the incoming ticket backlog by routing each one to the right state (ready-for-agent, ready-for-human, needs-info, etc). |
-| `/start-ticket` | Pick up a `READY_TO_PLAN` ticket: checks out its branch, moves it to `IN_PROGRESS`, drops a `.exponential/current-ticket` marker so `/ship-ticket` knows which ticket you're on. |
-| `/tdd` | Build a feature with a red-green-refactor loop. Default mode for new functionality. |
-| `/diagnosing-bugs` | Stuck on a bug or perf regression. Reproduce → minimise → hypothesise → fix → regression-test. |
-| `/ship-ticket` | Done building: runs your test/type/lint suite, makes an atomic commit, opens a PR linked to the ticket, moves the ticket to `QA`. Run again on the same branch to **stack** another ticket onto the open PR. |
-| `/improve-codebase-architecture` | Run weekly-ish on a repo that's getting messy — finds deepening opportunities grounded in the domain. |
+| Something's broken, throwing, or slow | `/diagnosing-bugs` — reproduce → minimise → hypothesise → fix → regression-test |
+| Review a branch, PR, or diff | `/code-review` — standards + spec fidelity + Fowler code smells, in parallel sub-agents |
+| Need facts before deciding (docs, APIs, specs) | `/research` — background agent reads primary sources, leaves a cited markdown file; you keep working |
+| Unsure whether a design/state model feels right | `/prototype` — throwaway code that answers the question |
+| Raw reports piling up in the tracker | `/triage` — verifies claims and routes each to `READY_TO_PLAN` / `BLOCKED` / `NEEDS_REFINEMENT` / `ARCHIVED` |
+| One-off change, no ticket ceremony | `/ship-this` — commit → PR → automated review + autofix loop → CI → squash-merge |
+| Repo getting muddy | `/improve-codebase-architecture` — run weekly-ish |
+| Finished a session — worktree still on disk, ticket still in `QA` | `/cleanup` — tears down the worktree, promotes `QA` → `DONE` (gated on the PR actually having merged), and tells you whether you can close the tab. `--all` sweeps every stale worktree at once |
+| Quick design stress-test, no repo/artifacts | `/grill-me` (see FAQ for how it differs from `/grill-with-docs`) |
+| Lost? | `/ask-matt` — describe your situation; it names the skill |
 
-Run any skill by typing `/<name>` in a Claude Code session.
+### If you know upstream's flow
+
+Matt's canonical chain is `grill-with-docs → to-spec → to-tickets → implement → code-review`. Ours is the same spine with three deliberate differences — the decoder ring for his videos and docs:
+
+| Matt says | We do | Difference |
+|---|---|---|
+| `grill-with-docs` | `/grill-with-docs` | Identical. |
+| `to-spec` | `/to-prd` + `/to-robo-prd` | Split into a human zone and an agent zone of one Exponential PRD page. |
+| `to-tickets` | `/to-tickets` (ours) | He cuts many thin tickets; we cut **one ticket per scope** with the slices as ordered actions — fewer PRs, a backlog humans can read. |
+| `implement` | `/start-ticket` → `/implement` → `/ship-ticket` | Same build skill, bracketed by the Exponential ticket lifecycle. His flow ends at commit; ours continues to `QA` → merge → auto-`DONE`. |
+| `code-review` | `/code-review` | Identical (it also runs inside `/implement` before each commit). |
+| `setup-matt-pocock-skills` | `/setup-syntro-skills` | Renamed; same job, Exponential-aware. |
 
 ## One-time setup
 
 ### 1. Authenticate the Exponential CLI
 
 ```bash
-exponential auth status        # already authed? you're good
-exponential auth login         # otherwise
-exponential workspaces set-default <workspace-slug>   # so future commands don't need --workspace
+npm install -g exponential-cli@latest   # the PRD/ticket skills need >= 1.7.0
+exponential auth status                 # already authed? you're good
+exponential auth login                  # otherwise
+exponential workspaces set-default <workspace-slug>
 ```
 
 ### 2. Install the skills
@@ -90,16 +133,16 @@ In a fresh Claude Code session opened in the target repo:
 /setup-syntro-skills
 ```
 
-The skill detects that Exponential is your tracker (if you're using Exponential for tracking and have it written as such in your AGENTS files..), asks which workspace + product this repo maps to, and writes:
+It probes for the Exponential CLI and proposes Exponential as the tracker, asks which workspace + product this repo maps to, and writes:
 
-- `docs/agents/issue-tracker.md` — the CLI commands and triage status mapping, with your workspace/product baked in
+- `docs/agents/issue-tracker.md` — the CLI commands, triage status mapping, and **Wayfinding operations** (how `/wayfinder` expresses its map on Exponential), with your workspace/product baked in
 - `docs/agents/triage-labels.md` — the canonical triage role vocabulary
 - `docs/agents/domain.md` — where `CONTEXT.md` and ADRs live
 - An `## Agent skills` block in `CLAUDE.md` / `AGENTS.md` pointing at the above
 
-After this, every other skill in the set "just works" against our Exponential product.
+It also invokes `/setup-git-flow` as a sub-step: detects your repo's branching model (trunk-based, `develop → main`, or full `develop → staging → main`) from the remote branches, confirms with you, and writes `docs/agents/git-flow.md`. `/start-ticket` and `/ship-ticket` read it to pick the right base branch; `/setup-merge-hook` reads it to know which merge triggers `DONE`.
 
-`/setup-syntro-skills` also invokes `/setup-git-flow` as a sub-step. That one detects your repo's branching model (trunk-based, `develop → main`, or full `develop → staging → main`) by inspecting remote branches via `gh`, confirms with you, and writes `docs/agents/git-flow.md`. `/ship-ticket` reads it to pick the right base branch for new PRs; `/setup-merge-hook` (below) reads it to know which merge triggers `DONE`.
+After this, every other skill "just works" against our Exponential product.
 
 ### 4. (Optional but recommended) Wire the merge hook
 
@@ -118,7 +161,7 @@ Either way the skill sets your Exponential JWT as a repo secret called `EXPONENT
 
 Requirement ticking means "this shipped to trunk green", not "someone wrote it down". It assumes **one ticket = one scope = one PR**; if a scope ever spans several PRs, the first merge ticks the whole scope and over-claims. The generated workflow says so in its own comments.
 
-Without any of this, tickets stay in `QA` after `/ship-ticket` and you flip them to `DONE` by hand.
+Without any of this, tickets stay in `QA` after `/ship-ticket` — run `/cleanup` to sweep them (it checks that each ticket's PR actually merged before promoting), or flip them to `DONE` by hand.
 
 ## Install modes: which to pick
 
@@ -143,7 +186,9 @@ Once `/setup-syntro-skills` and `/setup-merge-hook` are wired, every state trans
 | `/to-tickets` / `/to-expo` files the ticket | `READY_TO_PLAN` |
 | `/start-ticket EXPO-N` | `IN_PROGRESS` |
 | `/ship-ticket` opens the PR | `QA` |
-| PR merges to your trunk | `DONE` (auto, via GitHub Action) |
+| PR merges to your deploy trigger | `DONE` (auto, via GitHub Action) |
+
+Where the Action isn't wired, `/cleanup` does that last row on demand — it promotes only the tickets whose PR GitHub confirms as merged, and clears out the worktrees those branches left behind. `/ship-this` and `/ship-ticket --merge` hand off to it automatically once the merge is real, so the session ends with either "all clear, close the tab" or the list of what's still in flight.
 
 The commit, the PR, and the ticket are linked three ways: `ticket.branchName` ↔ git branch, `ticket.prUrl` ↔ GitHub PR, and an `Exponential-Ticket: <cuid>` trailer on the commit `/ship-ticket` creates. The GitHub Action uses `ticket.prUrl` as the source of truth when promoting to `DONE`; the commit trailer is decoration for human `git log` readers.
 
@@ -175,7 +220,9 @@ A loop that uses the skills the way they were designed to compose. Adapt it.
 
 9. **Merge.** When the PR merges to your trunk, the GitHub Action scaffolded by `/setup-merge-hook` finds the linked ticket(s) — directly or by walking rollup-PR commit messages for child PR refs — and, depending on the mode you chose, moves them to `DONE` and/or ticks their scope's feature requirements as met. You don't touch the ticket again.
 
-10. **Maintain the design.** Once a week-ish, run `/improve-codebase-architecture` on the repo. It surfaces refactors grounded in our domain language.
+10. **Close the session.** Run `/cleanup`. It removes the worktree the work happened in, promotes any ticket the Action didn't (checking each PR actually merged first), and ends with a straight answer: everything's landed and you can close the window, or here's the list of what's still in flight. `/ship-this` and `/ship-ticket --merge` hand off to it automatically, so most of the time you won't type it.
+
+11. **Maintain the design.** Once a week-ish, run `/improve-codebase-architecture` on the repo. It surfaces refactors grounded in our domain language.
 
 The skills are designed to be invoked at the moment you'd already pause to think. They don't replace the pause — they structure it.
 
@@ -194,15 +241,19 @@ If you discover one of these has been accidentally committed historically, raise
 
 ## FAQ
 
+### When `/grill-with-docs` and when `/wayfinder`?
+
+See [Step 0](#step-0--size-the-effort). Short version: grill is a conversation (one session settles everything); wayfinder is a campaign (a persistent map of decision tickets for efforts too foggy to spec in one sitting). Wrong guesses self-correct — wayfinder exits early when there's no fog, and a drowning grill session is your cue to escalate.
+
 ### What's the difference between `/grill-me` and `/grill-with-docs`?
 
 Both run a one-question-at-a-time interview to stress-test a plan. The difference is what they check it against.
 
-**`/grill-me`** — Plain grilling. Walks the decision tree, asks one question at a time, recommends an answer, explores the codebase when it can answer the question itself. Generic, lightweight, no artifacts produced.
+**`/grill-me`** — Plain grilling. Walks the decision tree, asks one question at a time, recommends an answer, explores the codebase for *facts* (decisions always come to you). Generic, lightweight, no artifacts produced.
 
 **`/grill-with-docs`** — Same grilling loop, but anchored to the repo's domain model. It additionally:
 
-- Reads `CONTEXT.md` / `CONTEXT-MAP.md` and `docs/adr/` first, then challenges your terms against the existing glossary ("you said 'account' — do you mean Customer or User?")
+- Reads `CONTEXT.md` / `CONTEXT-MAP.md` and the ADRs first, then challenges your terms against the existing glossary ("you said 'account' — do you mean Customer or User?")
 - Cross-references claims with the actual code and surfaces contradictions
 - Writes documentation inline as decisions crystallise — updates `CONTEXT.md` when a term is resolved, offers ADRs sparingly (only when the decision is hard to reverse, surprising, and a real trade-off)
 
@@ -210,45 +261,38 @@ Both run a one-question-at-a-time interview to stress-test a plan. The differenc
 
 ### How do I add, edit, or improve a skill?
 
-The flow:
+You need a Mode A install (clone + symlinks) — your edits take effect in the next session, no reinstall. The flow:
 
-1. **Switch to Mode B locally**, so your edits are picked up live without a commit-push round-trip:
-   ```bash
-   git clone git@github.com:positonic/skills.git ~/code/skills
-   ~/code/skills/scripts/link-skills.sh
-   ```
+1. **Edit an existing skill** at `skills/<bucket>/<name>/SKILL.md`, or **create a new one** with the help of `/writing-great-skills` (the discipline for writing skills that steer well).
 
-2. **Edit an existing skill** at `skills/<bucket>/<name>/SKILL.md`, or **create a new one** with the help of `/write-a-skill` (it scaffolds the folder, frontmatter, and structure correctly).
-
-3. **Choose the right bucket** for new skills:
+2. **Choose the right bucket** for new skills:
    - `skills/engineering/` — daily code work
    - `skills/productivity/` — daily non-code workflow tools
-   - `skills/misc/` — kept around but rarely used
+   - `skills/misc/` — kept around but rarely used (not shipped in the plugin)
    - `skills/in-progress/` — drafts not ready for the team yet
 
-4. **Test live** by running the skill in any repo. Because `link-skills.sh` symlinks from your working tree, edits take effect on the next session — no reinstall.
+3. **Test live** by running the skill in any repo — `link-skills.sh` symlinks from your working tree, so edits apply on the next session.
 
-5. **If you're promoting a skill to a public bucket** (`engineering`, `productivity`, or `misc`), the repo's `CLAUDE.md` requires you to update three places so teammates get it:
-   - Top-level `README.md` — add an entry in the right section
-   - The bucket's `README.md` — add a one-line entry
-   - `.claude-plugin/plugin.json` — add the path to the `skills` array
+4. **If you're promoting a skill** to `engineering/` or `productivity/`, the repo's `CLAUDE.md` requires updating: the top-level `README.md`, the bucket's `README.md`, and `.claude-plugin/plugin.json`. Drafts in `in-progress/` must **not** appear in any of those. Run `claude plugin validate . --strict` after touching the manifests.
 
-   Drafts in `skills/in-progress/` must **not** appear in any of those three files.
+5. **Open a PR** against `main` on `positonic/skills`. Don't push directly to `main` — others install from it. If your PR adds/renames a skill, bump the plugin version (`plugin.json` + `package.json`, kept in sync) so plugin-mode users get the update.
 
-6. **Open a PR** against `main` on `positonic/skills`. Don't push directly to `main` — others install from it.
+6. **After merge**, announce it; teammates upgrade with `scripts/upgrade.sh`.
 
-7. **After merge**, teammates pick up the change by re-running `npx skills@latest add positonic/skills` in their projects.
+### How do we sync with upstream (mattpocock/skills)?
 
-Fixes follow the same flow minus the bucket-choice step. Small fix? Edit, test, PR. Bigger redesign? Draft it under `skills/in-progress/` first, then graduate it once it's settled.
+`git fetch upstream && git merge upstream/main` on a branch, then resolve by the policy in `CLAUDE.md` ("Fork conventions"): our planning-suite names win on collisions (`to-prd`, `to-robo-prd`, `to-tickets`, `setup-syntro-skills`); upstream's craft content is adopted and adapted. Port improvements into our versions rather than taking upstream's files.
 
 ## Tips and gotchas
 
-- **Re-run `npx skills@latest add positonic/skills` periodically** in each project to pull updates. It's idempotent.
+- **Upgrading is always** `~/code/skills/scripts/upgrade.sh` (Mode A). It pulls, re-links, and prunes stale symlinks from renames.
+- **New skills appear in your *next* session** — the slash-command list is loaded at session start.
 - **`/setup-syntro-skills` is per-repo.** Run it once per repo. Re-run if you switch trackers or want to start clean.
 - **You can hand-edit `docs/agents/*.md` after setup.** The other skills read these files; edits stick.
 - **Triage roles use Exponential ticket statuses directly** — no labels, no body markers. Each role maps to a unique `ticket.status` so `/triage` can route on a single `--status` filter.
 - **The `exponential` CLI must be on `$PATH` and authed** for any of the publish/read skills to work. If they fail with auth errors, run `exponential auth login` again.
+- **Context hygiene**: plan (grill → PRD → tickets) in one unbroken session; execute each ticket in a fresh one. If a planning session approaches the smart zone (~120k tokens), `/handoff` and continue fresh rather than pushing on degraded.
 
 ## Credits & upstream
 
-Forked from [mattpocock/skills](https://github.com/mattpocock/skills) — the upstream `README.md` in this repo has Matt's longer essay on *why* these skills exist (the four failure modes, the Pragmatic Programmer / DDD framings). Worth reading if you want the deeper rationale; not required to use the tools day-to-day.
+Forked from [mattpocock/skills](https://github.com/mattpocock/skills) — the upstream `README.md` in this repo has Matt's longer essay on *why* these skills exist (the four failure modes, the Pragmatic Programmer / DDD framings). Worth reading for the deeper rationale; not required to use the tools day-to-day. The vendored `docs/engineering/` and `docs/productivity/` pages are upstream's human docs — useful reference, but where they name `to-spec` or upstream's ticket model, translate via the table above; this doc is our canon.
