@@ -89,8 +89,11 @@ Both workflows start with the same **Resolve merged PR → Tickets** step. It wr
           # so its own URL is on no Ticket -- its children's URLs are).
           {
             echo "$PR_URL"
+            # `|| true`: grep exits 1 when a PR's commits contain no #123
+            # refs, which is the NORMAL case for a plain feature PR. Without
+            # this, pipefail + set -e kill the step on every non-rollup merge.
             git log "$BASE_SHA..$HEAD_SHA" --format=%B \
-              | grep -oE '#[0-9]+' | tr -d '#' | sort -u \
+              | { grep -oE '#[0-9]+' || true; } | tr -d '#' | sort -u \
               | sed "s@^@${REPO_URL}/pull/@"
           } | sort -u > /tmp/prs
           jq -R -s -c 'split("\n") | map(select(length > 0))' /tmp/prs > /tmp/prs.json
