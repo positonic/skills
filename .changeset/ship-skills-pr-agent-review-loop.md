@@ -1,5 +1,5 @@
 ---
-"mattpocock-skills": minor
+"syntro-skills": minor
 ---
 
 Teach the ship skills to wait for an automated review, apply its findings, and only then merge.
