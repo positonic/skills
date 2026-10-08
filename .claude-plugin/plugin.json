@@ -1,6 +1,6 @@
 {
   "name": "syntro-skills",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Syntrofi's agent skills for real engineering — grilling, two-zone PRDs, Exponential ticket flows, TDD, code review, wayfinder, domain modelling and more. Fork of mattpocock/skills.",
   "author": {
     "name": "James Farrell",
