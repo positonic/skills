@@ -171,7 +171,7 @@ Skip entirely if `--no-review` or `--skip-checks` was passed.
 
 The Ticket is already in `QA` and linked by now — that bookkeeping is deliberately done *first*, so a reviewer that hangs or a fix that fails can't leave the Ticket stranded in `IN_PROGRESS`. This step is best-effort polish on top.
 
-Run the loop exactly as [`/ship-this` step 7](../ship-this/SKILL.md#7-review--autofix-loop) documents it: probe for a reviewer (PR-Agent → CodeRabbit → local `/pr-review`), wait on the head SHA in a **background** job rather than polling inline, apply the findings with judgement, commit per finding, push. Two rounds maximum.
+Run the loop exactly as [`/ship-this` step 7](../ship-this/SKILL.md#7-review--autofix-loop) documents it: probe for a reviewer (Greptile → PR-Agent, if its workflow is enabled → CodeRabbit → local `/pr-review`), wait on the head SHA in a **background** job rather than polling inline, apply the findings with judgement, commit per finding, push. Two rounds maximum.
 
 Two things specific to shipping a Ticket:
 

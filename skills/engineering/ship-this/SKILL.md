@@ -1,6 +1,6 @@
 ---
 name: ship-this
-description: Ship the current working copy end-to-end with zero hand-holding. Branches if needed, commits, pushes, opens a PR against the right base (from `docs/agents/git-flow.md`, or `main` if absent), waits for whichever automated reviewer the repo has (PR-Agent, CodeRabbit, or a local `/pr-review`), applies the findings, waits for CI, and squash-merges. Use when ad-hoc changes are ready and the user says "ship it" / "/ship-this".
+description: Ship the current working copy end-to-end with zero hand-holding. Branches if needed, commits, pushes, opens a PR against the right base (from `docs/agents/git-flow.md`, or `main` if absent), waits for whichever automated reviewer the repo has (Greptile, PR-Agent, CodeRabbit, or a local `/pr-review`), applies the findings, waits for CI, and squash-merges. Use when ad-hoc changes are ready and the user says "ship it" / "/ship-this".
 ---
 
 # Ship This
@@ -143,29 +143,89 @@ Skip this section entirely if `--no-review` or `--skip-checks` was passed.
 
 #### 7a. Pick a reviewer
 
-Three candidates, in preference order: **PR-Agent**, **CodeRabbit**, then a local **`/pr-review`**. The first two run in the repo's own CI and comment on the PR; `/pr-review` runs on your machine and reports only to the agent.
+Four candidates, in preference order: **Greptile**, **PR-Agent**, **CodeRabbit**, then a local **`/pr-review`**. The first three comment on the PR; `/pr-review` runs on your machine and reports only to the agent.
 
 **Probe the repo — first hit decides:**
 
-1. **PR-Agent configured?** A `.pr_agent.toml` at the repo root, or any workflow that uses the action:
+1. **Greptile active?** Greptile is a GitHub App with no file in the repo, so probe for its check runs on recent PRs:
    ```bash
-   test -f .pr_agent.toml && echo pr-agent
-   grep -rl 'qodo-ai/pr-agent' .github/workflows/ 2>/dev/null
+   for sha in $(gh pr list --state all --limit 5 --json headRefOid --jq '.[].headRefOid'); do
+     gh api "repos/{owner}/{repo}/commits/$sha/check-runs" \
+       --jq '.check_runs[] | select(.app.slug=="greptile-apps") | .name'
+   done 2>/dev/null | head -1
    ```
-   Either hit → PR-Agent (7b).
-2. **CodeRabbit configured?** `.coderabbit.yaml`, `.coderabbit.yml`, or `coderabbit.yaml` at the repo root — treat as intentional opt-in. Requires `coderabbit-code-review` to be in the available-skills list this session; if it isn't, skip to 3. Hit → CodeRabbit (7c).
-3. **Past activity on the repo?** Check who has reviewed recent PRs:
+   Any output → Greptile (7b). It wins over PR-Agent because a team that installed Greptile alongside an older PR-Agent workflow has almost always moved on from it.
+2. **PR-Agent configured *and enabled*?** A `.pr_agent.toml` at the repo root, or a workflow that uses the action — and that workflow must still be `active`. A workflow disabled in the Actions UI keeps its file, so a file-only check picks a reviewer that will never run and burns the full 15-minute wait:
+   ```bash
+   WF=$(grep -rl 'qodo-ai/pr-agent' .github/workflows/ 2>/dev/null | head -1)
+   [ -n "$WF" ] && gh workflow list --all --json path,state \
+     --jq ".[] | select(.path==\"$WF\") | .state"
+   ```
+   `active` → PR-Agent (7c). Anything else (`disabled_manually`, `disabled_inactivity`, no workflow) → not PR-Agent, even if `.pr_agent.toml` exists — the toml only configures the action, it doesn't run anything.
+3. **CodeRabbit configured?** `.coderabbit.yaml`, `.coderabbit.yml`, or `coderabbit.yaml` at the repo root — treat as intentional opt-in. Requires `coderabbit-code-review` to be in the available-skills list this session; if it isn't, skip to 4. Hit → CodeRabbit (7d).
+4. **Past activity on the repo?** Check who has reviewed recent PRs:
    ```bash
    gh pr list --state all --limit 20 --json comments \
      --jq '[.[].comments[]?.author.login] | group_by(.) | map({login: .[0], n: length})' \
      2>/dev/null
    ```
-   `coderabbitai` present → CodeRabbit. `github-actions` present *and* a PR-Agent workflow exists → PR-Agent. Neither → 4.
-4. **Nothing configured** → `/pr-review` (7d).
+   `coderabbitai` present → CodeRabbit. Neither → 5. (`github-actions` comments no longer count as PR-Agent evidence on their own — step 2 already decided whether its workflow is live.)
+5. **Nothing configured** → `/pr-review` (7e).
 
-If both PR-Agent and CodeRabbit are set up, prefer **PR-Agent**: it's repo-owned CI, so "has the review finished?" has a definite answer (a workflow run either concluded or it didn't). CodeRabbit is a third-party App whose only signal is comment activity, and it's rate-limited on paid plans — a silent CodeRabbit is indistinguishable from a slow one.
+The order is about how definite "has the review finished?" is. Greptile and PR-Agent both leave a completion signal anchored to the head SHA — a check run, a workflow run — so the wait has a real end. CodeRabbit's only signal is comment activity, and it's rate-limited on paid plans — a silent CodeRabbit is indistinguishable from a slow one.
 
-#### 7b. PR-Agent path
+#### 7b. Greptile path
+
+Greptile (`greptile-apps[bot]`) reviews when a PR opens and again on most later pushes, and leaves three things:
+
+- **A `Greptile Review` check run on the reviewed commit** — the completion gate. Its `output.summary` reads like `12 files reviewed, 2 comments added.`
+- **Inline review comments**, each pinned to the commit it reviewed (`commit_id`) and opening with a severity badge — `alt="P0"`, `"P1"`, `"P2"`. These are the findings.
+- **A summary issue comment** marked `<!-- greptile_summary -->` with a confidence score. It is *edited in place* on re-review, so like PR-Agent's guide, never use "a new comment appeared" as the signal.
+
+**Greptile does not review every push.** On a multi-commit push it reviews the tip only, and it sometimes skips a push outright — small follow-ups especially. A missing check run is therefore an expected outcome, not a failure, and the wait must be able to end on it.
+
+Wait as a **background** Bash job (`run_in_background: true`):
+
+```bash
+PR=<pr-number>
+SHA=$(gh pr view "$PR" --json headRefOid --jq .headRefOid)
+seen=0
+for i in $(seq 60); do
+  s=$(gh api "repos/{owner}/{repo}/commits/$SHA/check-runs" \
+        --jq '[.check_runs[] | select(.app.slug=="greptile-apps")][0] | "\(.status) \(.conclusion) \(.output.summary)"' 2>/dev/null)
+  case "$s" in
+    completed*) echo "review finished for $SHA: $s"; exit 0 ;;
+    ""|null*)   [ "$seen" = 0 ] && [ "$i" -ge 20 ] && { echo "no Greptile run started for $SHA in 5m — push skipped"; exit 2; } ;;
+    *)          seen=1 ;;
+  esac
+  sleep 15
+done
+echo "timed out after 15m waiting for Greptile on $SHA"; exit 1
+```
+
+- Exit 0 → the review is in.
+- Exit 2 (Greptile never started on this SHA) → in round 1, fall back to `/pr-review` for this round; in round 2, the round-1 fixes went unreviewed by Greptile, which is fine — exit the loop.
+- Exit 1 (started but never finished) → treat Greptile as unavailable, fall back to `/pr-review`, don't re-arm.
+
+Then, up to **two rounds** of review → fix → push:
+
+1. Wait, as above.
+2. Read the findings for **this SHA only** — older comments describe code that has since changed:
+   ```bash
+   gh api --paginate "repos/{owner}/{repo}/pulls/$PR/comments" \
+     --jq ".[] | select(.user.login==\"greptile-apps[bot]\" and .commit_id==\"$SHA\")
+           | \"\(.path):\(.line // .original_line)\n\(.body)\n---\""
+   ```
+   Skim the `<!-- greptile_summary -->` issue comment for its confidence score and any risk it flags at the PR level, outside the inline comments.
+3. **Apply with judgement.** Work P0 and P1 findings first; P2 is advisory. Greptile flags behavioural risks — a nullable column, a filter that disagrees with a sibling resolver — so check each against the code rather than taking its suggested patch verbatim. Say which findings you skipped and why in your step-10 report.
+4. Commit per finding (`fix: <one-line>`) and `git push`.
+5. No commits produced → exit the loop.
+
+Re-read `headRefOid` each round. Two rounds is the cap.
+
+To get Greptile's comment threads resolved on the PR afterwards, `/pr-fix-all` works on them like any other reviewer's.
+
+#### 7c. PR-Agent path
 
 PR-Agent (Qodo) reviews on every push to the PR and posts as `github-actions` — a **Reviewer Guide** comment (findings) and, when `auto_improve` is on, a **Code Suggestions** comment.
 
@@ -194,7 +254,7 @@ done
 echo "timed out after 15m waiting for $WF on $SHA"; exit 1
 ```
 
-Exit 0 → the review is in. Exit 1 (timeout) → treat PR-Agent as unavailable, fall back to `/pr-review` for this round, and don't re-arm the wait.
+Exit 0 → the review is in. Exit 1 (timeout) → treat PR-Agent as unavailable, fall back to `/pr-review` for this round, and don't re-arm the wait. (A disabled workflow never gets here — step 7a rules it out — but if one is disabled mid-ship, the timeout is the backstop.)
 
 Then, up to **two rounds** of review → fix → push:
 
@@ -212,7 +272,7 @@ Then, up to **two rounds** of review → fix → push:
 
 Pushing fixes re-triggers PR-Agent on a new head SHA, which is exactly what round two waits on — re-read `headRefOid` each round rather than reusing the old value. Two rounds is the cap: if the reviewer is still finding new problems after two passes, something deeper is wrong and human eyes are warranted.
 
-#### 7c. CodeRabbit path
+#### 7d. CodeRabbit path
 
 Up to **two rounds** of review → fix → push. The cap is intentional — if CodeRabbit keeps finding new issues after two passes, something deeper is wrong and human eyes are warranted.
 
@@ -234,7 +294,7 @@ For each round:
    ```
 5. If autofix produced no commits (no findings, or findings non-actionable), exit the loop.
 
-#### 7d. `/pr-review` fallback path
+#### 7e. `/pr-review` fallback path
 
 `/pr-review` runs locally and produces a findings report to the agent — it doesn't post comments to the PR. So:
 
@@ -300,6 +360,8 @@ On any other final state — `auto-merge queued`, `awaiting CI`, `draft` — ski
 - **Push rejected** — remote has divergent history. Stop. The user resolves manually; this skill doesn't force-push or rebase silently.
 - **PR exists in draft** — leave draft state alone; don't promote it. The user can `gh pr ready` themselves.
 - **CodeRabbit unavailable or out of credits** — fall back to `/pr-review` automatically (see step 7a). If `/pr-review` is also unavailable, warn and continue.
+- **Greptile skips the push** — no `Greptile Review` check run appears on the head SHA within 5 minutes. Normal; see 7b for what each round does about it.
+- **PR-Agent workflow disabled** — the file is still in `.github/workflows/` but `gh workflow list --all` shows it `disabled_*`. 7a skips it; don't wait on it.
 - **PR-Agent workflow never concludes** — the 15-minute wait exits non-zero. Fall back to `/pr-review` for that round; don't re-arm the wait. A workflow that fails outright (`completed failure`) still satisfies the gate — read whatever it posted, and mention the failed run in the report.
 - **PR-Agent review is stale** — the Code Suggestions stamp doesn't match `headRefOid`. Something pushed after the review started. Ignore the stale block and re-wait on the new SHA (this consumes one of the two rounds).
 - **CI red** — don't merge. Surface the failing check.
