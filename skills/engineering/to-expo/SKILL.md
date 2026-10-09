@@ -1,9 +1,12 @@
 ---
 name: to-expo
-description: Break a plan, spec, or PRD into independently-grabbable tickets in Exponential using tracer-bullet vertical slices. Use when user wants to convert a plan into Exponential tickets, push slices to Exponential, or break work down into tickets / features / epics in Exponential.
+description: Slice a loose plan that does NOT belong to a registry feature (a cross-product epic, standalone chores) into many thin Exponential tickets. Manual-only - for feature work use /to-prd -> /to-robo-prd -> /to-tickets, which keeps the backlog to one ticket per scope.
+disable-model-invocation: true
 ---
 
 # To Expo
+
+> **Backlog warning - read before running.** This skill produces *many thin tickets*, one per vertical slice. That is the right shape for a loose cross-product plan and the wrong shape for feature work: dozens of agent-authored tickets make the backlog unreadable for the humans who triage it. For anything that belongs to a registry **feature**, stop here and use `/to-prd` -> `/to-robo-prd` -> `/to-tickets` instead - it files **one ticket per scope** with the slices as ordered actions, so the backlog stays human-readable while agents keep their detail. Before drafting slices, tell the user how many tickets you are about to file and confirm that the count is acceptable.
 
 Break a plan into independently-grabbable **tickets** in Exponential using vertical slices (tracer bullets). Tickets are the unit of backlog work; they live under a **product** and can be grouped by a **feature** (product-scoped) or an **epic** (workspace-scoped, cross-product).
 
@@ -39,7 +42,7 @@ If you have not already explored the codebase, do so to understand the current s
 
 Ask the user (or infer):
 
-- **Existing feature?** If yes, capture its CUID — every ticket will get `--feature <id>`.
+- **Existing feature?** If yes, this is probably feature work — offer to switch to `/to-tickets` (one ticket per scope) before continuing. If the user still wants thin slices here, capture the feature's CUID — every ticket will get `--feature <id>`.
 - **Existing epic?** If yes, capture its CUID — every ticket will get `--epic <id>`.
 - **New feature?** Create one with `exponential features create --product <slug> -n "<name>" -d "<description>" --json` and capture the `id` from the response. Prefer this when the plan covers a single coherent capability inside one product.
 - **New epic?** Create one with `exponential epics create -n "<name>" -d "<description>" --workspace <slug|id> --json` and capture the `id`. Prefer this when the work cuts across products or represents a strategic initiative.
@@ -74,6 +77,7 @@ Present the proposed breakdown as a numbered list. For each slice, show:
 
 Ask the user:
 
+- **You are about to file N tickets** — is that acceptable for this backlog, or should slices be merged to keep it readable?
 - Does the granularity feel right? (too coarse / too fine)
 - Are the dependency relationships correct?
 - Should any slices be merged or split further?
