@@ -15,7 +15,7 @@ Start after `/grill-with-docs` has reached shared understanding, or with `--from
 
 The chain's skills are user-invoked, so neither you nor a subagent can invoke them by name. You run them under the exception recorded in ADR 0005: resolve each by its **installed name** and have the subagent follow the file.
 
-1. **Resolve the skill.** `~/.claude/skills/<name>/SKILL.md`, else `~/.agents/skills/<name>/SKILL.md`. Neither → stop and name the missing skill. Never fall back to a repo-relative path.
+1. **Resolve the skill.** `~/.claude/skills/<name>/SKILL.md`, else `~/.agents/skills/<name>/SKILL.md`, else a `<name>/SKILL.md` anywhere under `~/.claude/plugins/` (a plugin install). None → stop and name the missing skill. Never fall back to a repo-relative path.
 2. **Write the brief.** A handoff summary of the kind `/handoff` writes: everything the skill would otherwise "synthesize from the conversation" — the decisions made, the vocabulary settled, the rejected alternatives — plus every id the earlier phases produced (product, feature, page, scope, ticket CUIDs). Reference artifacts (the PRD page, ADRs, `CONTEXT.md`) by id or path rather than restating them. Redact secrets: the brief becomes a prompt.
 3. **Spawn the subagent** on the phase's model (table below) with the brief, the skill path, and the **AFK rule**:
    > Read the skill file and run it exactly. Wherever the skill would ask the user something, stop and return the question with your recommended answer — never answer it yourself. Return the skill's own report-back, with every id you created.

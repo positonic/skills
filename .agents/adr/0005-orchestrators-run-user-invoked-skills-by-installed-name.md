@@ -14,7 +14,7 @@
 An **orchestrator** — a skill whose job is to drive a chain of other skills — may run a user-invoked skill by reading its `SKILL.md` at the **installed name** and having an agent follow it. Conditions:
 
 - The orchestrator is itself user-invoked, and its description and body **name the chain it runs**. The human typing the orchestrator is then the conscious trigger for every skill in the chain — one keystroke standing in for several, not the model deciding on its own.
-- It resolves each skill **by installed name only**: `~/.claude/skills/<name>/SKILL.md`, else `~/.agents/skills/<name>/SKILL.md`. Never a repo-relative path. If neither exists it stops and names the missing skill.
+- It resolves each skill **by installed name only**: `~/.claude/skills/<name>/SKILL.md`, else `~/.agents/skills/<name>/SKILL.md`, else a `<name>/SKILL.md` under `~/.claude/plugins/` for a plugin install. Never a repo-relative path. If none exists it stops and names the missing skill.
 - Any question a chained skill would put to the human is **relayed, never answered by the agent**. The human-in-the-loop steps that made those skills user-invoked survive the delegation.
 
 The exception is for orchestrators only. A skill that merely wants to use another user-invoked skill still may not; it should invoke a model-invoked one or ask the human to run the step.
