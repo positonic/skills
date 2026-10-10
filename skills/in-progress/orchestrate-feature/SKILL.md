@@ -40,7 +40,7 @@ Phase 2 gets the strongest model because every claim it writes is verified again
 
 ### The build, in waves
 
-A **wave** is every ticket whose blockers are all merged. For each ticket in the wave, in parallel:
+A **wave** is every ticket whose blockers are all merged. Merged is evidence, not inference: the blocker's ticket is `DONE`, or its linked PR reports `MERGED` from `gh pr view`. `QA` is not merged, and neither is a queued auto-merge. For each ticket in the wave, in parallel:
 
 - Spawn an agent **in its own worktree**, fresh context, on the build model, off a clean featureBase (`docs/agents/git-flow.md`, default `main`).
 - Its brief is the execution prompt `/to-tickets` emitted, narrowed to this one ticket: `start-ticket` first, then the actions in numbered order, each worked by the `implement` skill file (`/tdd` at the agreed seams, typecheck, `/code-review` before the commit), one commit per action, each action marked `COMPLETED` as it lands, then `ship-ticket` — with `--merge` only if the human passed `--merge` to you. Resolve the three skills by installed name as in step 1.
@@ -48,7 +48,7 @@ A **wave** is every ticket whose blockers are all merged. For each ticket in the
 
 When the wave returns, report per ticket: PR URL, ticket status, and anything that bounced. Then:
 
-- **With `--merge`**: `ship-ticket` merged each PR, so compute the next wave and run it. Repeat until no ticket is left.
+- **With `--merge`**: `ship-ticket` asked for each PR to merge. Confirm each one is `MERGED` — branch protection can leave it queued — then compute the next wave and run it. Repeat until no ticket is left, or until a queued merge leaves the next wave empty, in which case stop and say what it is waiting on.
 - **Without it**: the PRs are at ready for the human. Stop, and say exactly how to continue once they've merged: `/orchestrate-feature <feature> --from build`.
 
 The build is complete when every ticket on the feature is in `QA` or `DONE`, or named in your report as blocked, HITL, or bounced. Nothing is silently skipped.
