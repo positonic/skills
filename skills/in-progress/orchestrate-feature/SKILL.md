@@ -43,7 +43,7 @@ Phase 2 gets the strongest model because every claim it writes is verified again
 A **wave** is every ticket whose blockers are all merged. Merged is evidence, not inference: the blocker's ticket is `DONE`, or its linked PR reports `MERGED` from `gh pr view`. `QA` is not merged, and neither is a queued auto-merge. For each ticket in the wave, in parallel:
 
 - Spawn an agent **in its own worktree**, fresh context, on the build model, off a clean featureBase (`docs/agents/git-flow.md`, default `main`).
-- Its brief is the execution prompt `/to-tickets` emitted, narrowed to this one ticket: `start-ticket` first, then the actions in numbered order, each worked by the `implement` skill file (`/tdd` at the agreed seams, typecheck, `/code-review` before the commit), one commit per action, each action marked `COMPLETED` as it lands, then `ship-ticket` — with `--merge` only if the human passed `--merge` to you. Resolve the three skills by installed name as in step 1.
+- Its brief is the execution prompt `/to-tickets` emitted, narrowed to this one ticket: `start-ticket` first, then the actions in numbered order, each worked by the `implement` skill file (`/tdd` at the agreed seams, typecheck), one commit per action, each action marked `COMPLETED` as it lands, then `/code-review` once over the branch, then `ship-ticket` — with `--merge` only if the human passed `--merge` to you. Resolve the three skills by installed name as in step 1.
 - The AFK rule applies. A `NEEDS_REFINEMENT` or HITL ticket, and any action that turns out wrong as written, comes back as a question — never a guess.
 
 When the wave returns, report per ticket: PR URL, ticket status, and anything that bounced. Then:
