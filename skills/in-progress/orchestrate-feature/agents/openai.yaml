@@ -1,0 +1,5 @@
+interface:
+  display_name: "Orchestrate Feature"
+  short_description: "Drive PRD → Agent PRD → tickets → build with subagents"
+policy:
+  allow_implicit_invocation: false
