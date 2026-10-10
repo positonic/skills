@@ -32,7 +32,7 @@ A phase is complete when the skill's report-back step has been returned with its
 | 3 | Tickets | `to-tickets` | feature CUID | ticket table and execution prompt | opus |
 | 4 | Build | `start-ticket`, `implement`, `ship-ticket` | one ticket | PR open, ticket in `QA` | opus, one agent per ticket |
 
-Phase 2 gets the strongest model because every claim it writes is verified against the code and every ticket inherits its mistakes. Phases 1–3 are sequential — each reads the previous one's page in Exponential — so there is nothing to parallelise; the model choice per phase is the whole gain. Where the harness lets you set reasoning effort per agent, follow the table; otherwise encode the thoroughness in the brief.
+Phase 2 gets the strongest model because every claim it writes is verified against the code and every ticket inherits its mistakes. Phases 1–3 are sequential — each reads the previous one's page in Exponential — so there is nothing to parallelise; the model choice per phase is the whole gain. The model names are Claude Code's; on another harness, map each to the equivalent tier. Where the harness lets you set reasoning effort per agent, follow the table; otherwise encode the thoroughness in the brief.
 
 ### The gate
 
