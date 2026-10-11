@@ -86,6 +86,8 @@ exponential auth login                  # otherwise
 exponential workspaces set-default <workspace-slug>
 ```
 
+For grilling sessions to record decisions (below), also give the agent its own identity: point `EXPONENTIAL_AGENT_HOME` at a HOME holding an agent key (`exp_agent_…`), e.g. `export EXPONENTIAL_AGENT_HOME=~/.config/agent-homes/claude`, and check it with `HOME="$EXPONENTIAL_AGENT_HOME" exponential auth status`. Without it, grilling still works but records nothing. It never falls back to writing as you.
+
 ### 2. Install the skills
 
 Three install modes — pick one. The difference matters; see the comparison table below.
@@ -256,6 +258,8 @@ Both run a one-question-at-a-time interview to stress-test a plan. The differenc
 - Reads `CONTEXT.md` / `CONTEXT-MAP.md` and the ADRs first, then challenges your terms against the existing glossary ("you said 'account' — do you mean Customer or User?")
 - Cross-references claims with the actual code and surfaces contradictions
 - Writes documentation inline as decisions crystallise — updates `CONTEXT.md` when a term is resolved, offers ADRs sparingly (only when the decision is hard to reverse, surprising, and a real trade-off)
+
+**Both record your decisions in Exponential** when the repo tracks work there. Each question is logged on the feature as a draft (`Q5 (D-0006): …`) under the agent's identity, and your answer is quoted into it. At the end you get a table and one question: "Record these as your decisions?" On yes, your own CLI login confirms them, so answered ones become Accepted with you as decider. You never open the app. See [`EXPONENTIAL-DECISIONS.md`](skills/productivity/grilling/EXPONENTIAL-DECISIONS.md).
 
 **Rule of thumb**: use `/grill-me` for a quick design stress-test on something throwaway or pre-repo; use `/grill-with-docs` when the plan touches a real codebase with a domain language you want to keep coherent and documented.
 
