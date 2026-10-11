@@ -1,5 +1,15 @@
 # mattpocock-skills
 
+## 2.3.0
+
+### Minor Changes
+
+- [#17](https://github.com/positonic/skills/pull/17) [`c729b93`](https://github.com/positonic/skills/commit/c729b93b0397158f024671539b1e9888bec8a25b) Thanks [@positonic](https://github.com/positonic)! - `/grill-me` and `/grill-with-docs` now record the developer's decisions in Exponential as the session goes. The agent logs each question as a draft on the feature and records the answer. In the closing step, after an explicit "yes" in chat, the developer confirms the drafts with their own CLI login. Answered ones are accepted and the developer becomes their decider. The steps are in `skills/productivity/grilling/EXPONENTIAL-DECISIONS.md`, so the upstream `/grilling` text stays generic.
+
+### Patch Changes
+
+- [#18](https://github.com/positonic/skills/pull/18) [`0a42c2c`](https://github.com/positonic/skills/commit/0a42c2c98ae8a892f4cf2f23184dd1c36a2a8b17) Thanks [@positonic](https://github.com/positonic)! - The grilling closing step asks its record-decisions question as plain text, never in a popup, so a consent hook can see the typed yes.
+
 ## 2.2.0
 
 ### Minor Changes
