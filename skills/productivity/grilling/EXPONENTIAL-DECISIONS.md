@@ -62,6 +62,18 @@ Rules:
 - Only record decisions the developer makes **in this conversation**. A reported decision ("Andi decided X") stays OPEN, with a note saying who reportedly decided it.
 - Never record your own recommendation as decided without the developer's reply.
 
+## When a decision also gets an ADR
+
+The Decision Log shows two kinds of entry side by side (ADR-0060): **Decision** rows (`D-0006`), which are written here, and **ADRs**, which are copied in read-only from `docs/adr/` in the repo. Most grilling answers fail the ADR bar and exist only as Decision rows. That is what the Decision rows are for.
+
+When `/grill-with-docs` also writes an ADR for a decision, the decision is one decision with a formal write-up, not two decisions. So:
+
+- Keep the Decision row. It holds the developer's quoted answer, and the ADR is its write-up.
+- Add a line to its body: `Formalised as docs/adr/<NNNN-slug>.md (pending merge)`. In the ADR, mention the D-number.
+- Once the ADR has merged and synced into the Decision Log, link the two so they show as one ("Decided in"): find the ADR's document id on its Decisions page, then run `exponential decisions update <id> --adr <adr-document-id>`. Syncing doesn't link them on its own yet.
+
+Never log a separate Decision row for an ADR that's already in the repo. Link to it instead.
+
 ## Closing step (developer identity, after consent)
 
 When shared understanding is reached:
