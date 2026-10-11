@@ -86,6 +86,8 @@ When shared understanding is reached:
    | D-0007 | Which region? | (hedged) | Open |
 
 2. Ask once: **"Record these as your decisions in Exponential? (yes / change something)"**. Apply any changes first, with the agent identity, then ask again.
+
+   Ask it **as plain text, as the last line of your message, word for word**. Never ask it through a question tool, popup or multiple-choice prompt (`AskUserQuestion` or similar). A consent hook may be watching for the developer to *type* yes in reply to this exact sentence. An answer picked in a popup reaches you as a tool result, not as something the developer typed, so the hook never sees it and the confirm calls get blocked. Then wait for their next message.
 3. On **yes**, run the following as the developer, with **no `HOME=` prefix**:
 
    ```bash
