@@ -102,6 +102,8 @@ When shared understanding is reached:
 
 If the developer says anything other than yes, run nothing as the developer. The drafts stay where they are, visible in their Inbox.
 
+If the guard still denies the confirm after a typed yes (consent hook missing, or the reply did not read as a yes), say so in one line and give the developer the exact `exponential decisions confirm …` commands to run in their own terminal; or finish later with `/confirm-decisions`, which is this closing step on its own.
+
 Then suggest the usual next step (`/to-prd`, or `/implement` for work that fits this session).
 
 ## Hook note
