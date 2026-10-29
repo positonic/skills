@@ -37,7 +37,7 @@ else:
     picked = [t for s in a.status.split(',') for t in list_tickets(s) if not t.get('points')]
 
 todo = [{'id': t['id'], 'n': t['number'], 'type': t['type'], 'title': t['title'],
-         'body': (t.get('body') or '')[:2500]} for t in picked]
+         'body': t.get('body') or ''} for t in picked]
 json.dump(todo, open(a.out, 'w'), indent=1)
 empty = sum(1 for t in todo if len(t['body'].strip()) < 40)
 print(f'{len(todo)} tickets to score -> {a.out} ({empty} with empty/stub bodies)')
