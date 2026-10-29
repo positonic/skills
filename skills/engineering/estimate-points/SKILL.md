@@ -55,7 +55,8 @@ Prints the count and how many have empty/stub bodies. Zero → say so and stop.
 ### 4. Load the anchors
 
 If `<root>/docs/agents/estimation.md` exists, its anchors table **replaces** the
-default one below (same format) — that's how a repo calibrates to its own
+default one below (same format), and its reference distribution, if it has one,
+replaces the default distribution in step 6 — that's how a repo calibrates to its own
 team's past estimates. Otherwise use the defaults.
 
 ### 5. Score
