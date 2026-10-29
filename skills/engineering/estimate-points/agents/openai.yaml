@@ -1,0 +1,3 @@
+interface:
+  display_name: "Estimate Points"
+  short_description: "Story-point unestimated Exponential tickets on a fixed scale"
