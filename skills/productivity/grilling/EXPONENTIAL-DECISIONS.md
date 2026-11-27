@@ -24,7 +24,8 @@ If either identity is missing, say so in one line ("Not recording decisions in E
 ## At session start (agent identity)
 
 1. Resolve the workspace and product from the repo, as `/to-bug` does: the **Workspace** and **Product** lines in `docs/agents/issue-tracker.md`, preferring the CUID.
-2. Ask once which **feature** the session belongs to, suggesting the repo's **Default feature** if there is one, and offer to create one (`exponential features create …`) if none fits. 3. Ask which **Pillar** and which **ticket** the session belongs to.
+2. Ask once which **feature** the session belongs to, suggesting the repo's **Default feature** if there is one, and offer to create one (`exponential features create …`) if none fits.
+3. Ask which **Pillar** and which **ticket** the session belongs to.
    - If `.exponential/current-ticket` exists, it holds the CUID of the ticket in progress. Read that ticket and suggest it, with its Pillar if it shows one:
 
      ```bash
