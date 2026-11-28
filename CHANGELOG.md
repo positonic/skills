@@ -1,5 +1,21 @@
 # mattpocock-skills
 
+## 2.3.0
+
+### Minor Changes
+
+- [#20](https://github.com/positonic/skills/pull/20) [`c9b1bf5`](https://github.com/positonic/skills/commit/c9b1bf59a69b0e1bcddae8078af860b29b940553) Thanks [@positonic](https://github.com/positonic)! - New `/estimate-points` skill. It gives story points to unestimated Exponential tickets, reading the workspace and product from the repo you're standing in (the same way `/to-bug` does). Every run scores against a fixed rubric and anchor tickets, so estimates don't drift from week to week. A repo can swap in its own anchors in `docs/agents/estimation.md`. It does done tickets by default, planned tickets on request, or named tickets with `--ticket`.
+
+- [#17](https://github.com/positonic/skills/pull/17) [`c729b93`](https://github.com/positonic/skills/commit/c729b93b0397158f024671539b1e9888bec8a25b) Thanks [@positonic](https://github.com/positonic)! - `/grill-me` and `/grill-with-docs` now record the developer's decisions in Exponential as the session goes. The agent logs each question as a draft on the feature and records the answer. In the closing step, after an explicit "yes" in chat, the developer confirms the drafts with their own CLI login. Answered ones are accepted and the developer becomes their decider. The steps are in `skills/productivity/grilling/EXPONENTIAL-DECISIONS.md`, so the upstream `/grilling` text stays generic.
+
+- [#22](https://github.com/positonic/skills/pull/22) [`8fd88ba`](https://github.com/positonic/skills/commit/8fd88baea5dca17d5fd87257a7e7833724cf8720) Thanks [@positonic](https://github.com/positonic)! - `/to-expo`, `/to-tickets` and `/to-bug` now tag each new ticket with the workspace Pillars it belongs to. They read the Pillars once (`labels list --category pillar`), match each ticket to the Pillars' "What it covers" descriptions, and pass the ids with `--label` on create. The quiz and the bug report show the Pillars chosen. Before this, no skill attached a Pillar, so new tickets were missing from their Pillar page until someone tagged them by hand.
+
+### Patch Changes
+
+- [#18](https://github.com/positonic/skills/pull/18) [`0a42c2c`](https://github.com/positonic/skills/commit/0a42c2c98ae8a892f4cf2f23184dd1c36a2a8b17) Thanks [@positonic](https://github.com/positonic)! - The grilling closing step asks its record-decisions question as plain text, never in a popup, so a consent hook can see the typed yes.
+
+- [#21](https://github.com/positonic/skills/pull/21) [`c5f564c`](https://github.com/positonic/skills/commit/c5f564c2d64927cd29a7cb2690871919619914b3) Thanks [@positonic](https://github.com/positonic)! - Grilling decisions are written for a reader who was not in the session: each gets a short outcome name and a plain one-sentence statement, a body that opens with "In plain words", and is filed under a Pillar and linked to its ticket when created.
+
 ## 2.2.0
 
 ### Minor Changes
