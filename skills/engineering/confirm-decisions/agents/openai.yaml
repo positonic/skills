@@ -1,0 +1,3 @@
+interface:
+  display_name: "Confirm Decisions"
+  short_description: "Accept agent-drafted Exponential decisions as yours, with a typed yes"

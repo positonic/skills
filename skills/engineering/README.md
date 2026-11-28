@@ -21,6 +21,7 @@ Reachable only when you type them (Claude Code: `disable-model-invocation: true`
 
 Model- or user-reachable (rich trigger phrasing so the model can reach for them).
 
+- **[confirm-decisions](./confirm-decisions/SKILL.md)** — Accept agent-drafted Exponential decisions as the developer's own from the terminal: shows the table, asks for a typed yes, then runs `decisions confirm` as the developer. The closing step of `/grill-with-docs`, runnable on its own.
 - **[prototype](./prototype/SKILL.md)** — Build a throwaway prototype to answer a design question: a runnable terminal app for state/logic, or several toggleable UI variations.
 
 - **[diagnosing-bugs](./diagnosing-bugs/SKILL.md)** — Disciplined diagnosis loop for hard bugs and performance regressions: reproduce → minimise → hypothesise → instrument → fix → regression-test.

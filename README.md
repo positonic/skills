@@ -198,6 +198,7 @@ Skills I use daily for code work.
 
 **Model-invoked**
 
+- **[confirm-decisions](./skills/engineering/confirm-decisions/SKILL.md)** — Accept agent-drafted [Exponential](https://www.exponential.im) decisions as yours from the terminal: a table, a typed yes, then `decisions confirm` runs as you. The closing step of `/grill-with-docs`, runnable on its own.
 - **[prototype](./skills/engineering/prototype/SKILL.md)** — Build a throwaway prototype to answer a design question — a runnable terminal app for state/logic questions, or several radically different UI variations toggleable from one route.
 - **[diagnosing-bugs](./skills/engineering/diagnosing-bugs/SKILL.md)** — Disciplined diagnosis loop for hard bugs and performance regressions: reproduce → minimise → hypothesise → instrument → fix → regression-test.
 - **[research](./skills/engineering/research/SKILL.md)** — Investigate a question against high-trust primary sources and capture the findings as a cited Markdown file in the repo, run as a background agent.
