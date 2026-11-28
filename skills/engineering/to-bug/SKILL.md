@@ -132,6 +132,22 @@ Keep the body tight. If the raw log runs long, put a trimmed extract in **Actual
 - `3` — minor or cosmetic
 - `4` — trivial
 
+### 5b. Pillars
+
+A **Pillar** is a workspace tag with category `pillar`. The Pillar page lists every ticket that carries its tag, so a ticket without the tag is invisible there. Read the workspace's Pillars once:
+
+```bash
+exponential labels list --workspace <slug-or-cuid> --category pillar --json
+```
+
+For the bug:
+
+- Read each Pillar's description ("What it covers").
+- Attach every Pillar whose area the work is in. Pass its **id** with `--label <pillar-id>` on `tickets create` (repeatable). A slug can fail with "One or more tags are not available in this workspace".
+- Use the grouping as evidence: if the feature or epic belongs to a Pillar, its tickets usually do too.
+- Attach none if none fits. Do not stretch a Pillar to cover the work.
+- If the workspace has no Pillars, skip this step.
+
 ### 6. Cycle — probe before promising
 
 The user will often ask for the Ticket to land **in the current cycle**. Check whether the installed CLI can do that before claiming it did:
@@ -153,6 +169,7 @@ exponential tickets create \
   --status <BACKLOG|NEEDS_REFINEMENT|READY_TO_PLAN> \
   --priority <0-4>                 # only if step 5 set one
   --feature <feature-cuid>         # only if the repo declares a default feature
+  --label <pillar-id>              # one per Pillar from step 5b (repeatable); omit if none
   -t "<title>" \
   -b "$(cat <<'EOF'
 <body, per the template in step 4>
@@ -185,6 +202,7 @@ Then report, in a few lines:
 
 - `shortId` — title
 - Product, status, priority (or "unset")
+- Pillars attached (or "none")
 - Whether it was reproduced, stated explicitly
 - **If the cycle was requested but unsupported**: say it was not set, and that it needs setting in the app. Never let this pass silently — the user asked for it.
 - Next step: `/start-ticket <shortId>` to pick it up, or `/triage` to route it.
