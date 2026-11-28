@@ -61,6 +61,23 @@ For each slice also decide:
 
 - **Ticket type**: `FEATURE` (default for new behaviour), `BUG`, `CHORE`, `IMPROVEMENT`, `SPIKE` (timeboxed investigation), `RESEARCH` (open-ended exploration).
 - **Initial status**: `READY_TO_PLAN` for AFK slices that are ready for an agent to grab, `NEEDS_REFINEMENT` for HITL slices that still need a human conversation.
+- **Pillars**: the workspace Pillars the slice belongs to (see below).
+
+#### Pillars
+
+A **Pillar** is a workspace tag with category `pillar`. The Pillar page lists every ticket that carries its tag, so a ticket without the tag is invisible there. Read the workspace's Pillars once:
+
+```bash
+exponential labels list --workspace <slug-or-cuid> --category pillar --json
+```
+
+For each slice:
+
+- Read each Pillar's description ("What it covers").
+- Attach every Pillar whose area the work is in. Pass its **id** with `--label <pillar-id>` on `tickets create` (repeatable). A slug can fail with "One or more tags are not available in this workspace".
+- Use the grouping as evidence: if the feature or epic belongs to a Pillar, its tickets usually do too.
+- Attach none if none fits. Do not stretch a Pillar to cover the work.
+- If the workspace has no Pillars, skip this step.
 
 ### 5. Quiz the user
 
@@ -70,6 +87,7 @@ Present the proposed breakdown as a numbered list. For each slice, show:
 - **Type**: HITL / AFK
 - **Ticket type**: FEATURE / BUG / CHORE / IMPROVEMENT / SPIKE / RESEARCH
 - **Blocked by**: which other slices (if any) must complete first
+- **Pillars**: the Pillar names you will attach, or "none"
 - **User stories covered**: which user stories this addresses (if the source material has them)
 
 Ask the user:
@@ -95,6 +113,7 @@ exponential tickets create \
   --status <READY_TO_PLAN|NEEDS_REFINEMENT> \
   --feature <feature-cuid>      # if grouping under a feature
   --epic <epic-cuid>            # if grouping under an epic
+  --label <pillar-id>           # one per Pillar from step 4 (repeatable)
   -t "<title>" \
   -b "$(cat <<'EOF'
 <body, per template below>

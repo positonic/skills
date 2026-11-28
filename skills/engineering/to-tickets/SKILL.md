@@ -53,10 +53,27 @@ For each scope (in rollout order), draft one ticket:
 - **Type**: `FEATURE` unless clearly `BUG`/`CHORE`/`IMPROVEMENT`/`SPIKE`/`RESEARCH`.
 - **Status**: `READY_TO_PLAN` for AFK work; `NEEDS_REFINEMENT` where a human decision is still open (HITL).
 - **Blocked-by**: only real cross-ticket dependencies ("V2 needs V1's schema merged").
+- **Pillars**: the workspace Pillars the ticket belongs to (see below).
+
+#### Pillars
+
+A **Pillar** is a workspace tag with category `pillar`. The Pillar page lists every ticket that carries its tag, so a ticket without the tag is invisible there. Read the workspace's Pillars once:
+
+```bash
+exponential labels list --workspace <slug-or-cuid> --category pillar --json
+```
+
+For each ticket:
+
+- Read each Pillar's description ("What it covers").
+- Attach every Pillar whose area the work is in. Pass its **id** with `--label <pillar-id>` on `tickets create` (repeatable). A slug can fail with "One or more tags are not available in this workspace".
+- Use the grouping as evidence: if the feature or epic belongs to a Pillar, its tickets usually do too.
+- Attach none if none fits. Do not stretch a Pillar to cover the work.
+- If the workspace has no Pillars, skip this step.
 
 ### 3. Quiz the user
 
-Present the cut as a numbered list. Per ticket: title, scope, HITL/AFK, blocked-by, and the action list. Ask:
+Present the cut as a numbered list. Per ticket: title, scope, HITL/AFK, blocked-by, Pillars, and the action list. Ask:
 
 - Is one-ticket-per-scope right here, or should any ticket be split (parallelism, early merge) or merged?
 - Are the actions truly vertical (each one demoable), and is the tracer bullet first?
@@ -73,9 +90,12 @@ exponential tickets create \
   --product <slug-or-cuid> \
   --feature <feature-cuid> \
   --scope <scope-cuid> \
+  --label <pillar-id> \
   --type FEATURE --status READY_TO_PLAN \
   -t "<title>" -b "<body, per template below>" --json
 ```
+
+Pass `--label` once per Pillar from step 2. Leave it out if none fits.
 
 Then per ticket:
 

@@ -32,7 +32,7 @@ Keep these in **one session, without clearing context** — the tickets should i
 
 1. **`/grill-with-docs`** — the agent interviews you one question at a time, challenges your terms against `CONTEXT.md` and the ADRs, and updates them as decisions crystallise. It won't proceed until you confirm shared understanding.
 2. **`/to-prd`** — turns the settled conversation into the **human PRD**: a Knowledge page linked to an Exponential Feature (checking the registry first so it extends rather than duplicates), with scopes and EARS requirements as native, checkable rows.
-3. **`/to-robo-prd`** then **`/to-tickets`** — appends the **Agent PRD** (implementation decisions, testing decisions, scope map with tracer bullets, rejected alternatives) to the same page, then cuts the work into **few tickets** — default one per scope — with the vertical slices as **ordered actions** on each ticket. One ticket = one branch = one PR; one action = one commit. Branch names are pre-assigned, blocking edges wired, and it ends by printing a clean-context execution prompt.
+3. **`/to-robo-prd`** then **`/to-tickets`** — appends the **Agent PRD** (implementation decisions, testing decisions, scope map with tracer bullets, rejected alternatives) to the same page, then cuts the work into **few tickets** — default one per scope — with the vertical slices as **ordered actions** on each ticket. One ticket = one branch = one PR; one action = one commit. Branch names are pre-assigned, blocking edges wired, each ticket gets the workspace Pillars it belongs to, and it ends by printing a clean-context execution prompt.
 
 *(A loose plan that doesn't belong to a registry feature? Use `/to-expo` instead of steps 2–3.)*
 
